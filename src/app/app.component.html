@@ -1,16 +1,21 @@
-<div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
+<div class="min-h-screen bg-obsidian-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200 relative overflow-hidden">
   
+  <!-- Dynamic Ambient Backdrop (Cinematic mode) -->
+  <div *ngIf="currentLevelIndex() !== null" class="absolute inset-0 z-0 overflow-hidden pointer-events-none transition-all duration-1000 ease-in-out">
+    <img [src]="resolvedFrameUrl()" alt="" class="w-full h-full object-cover scale-110 blur-3xl opacity-15 ambient-glow" />
+  </div>
+
   <!-- Navigation Header -->
-  <header class="border-b border-slate-900 bg-slate-950/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+  <header class="border-b border-obsidian-900 bg-obsidian-950/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <span class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 flex items-center justify-center font-black text-slate-950 shadow-lg shadow-amber-500/20">
         🎬
       </span>
       <div>
-        <h1 class="text-xl font-black tracking-widest bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
+        <h1 class="text-xl font-black font-display tracking-widest bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
           OSTPLAY
         </h1>
-        <p class="text-3xs text-slate-500 font-bold uppercase tracking-widest">Adivina la Banda Sonora de la Película</p>
+        <p class="text-3xs text-slate-500 font-bold uppercase tracking-widest">Adivina la Banda Sonora de la Película y Serie</p>
       </div>
     </div>
 
@@ -36,9 +41,7 @@
         Volver a Niveles
       </button>
     </div>
-  </header>
-
-  <!-- 1. LANDING PAGE: LEVEL SELECTION GRID (Shown when currentLevelIndex is null) -->
+  </header>  <!-- 1. LANDING PAGE: LEVEL SELECTION GRID (Shown when currentLevelIndex is null) -->
   <main *ngIf="currentLevelIndex() === null" class="flex-grow max-w-6xl w-full mx-auto p-6 space-y-8">
     <div class="text-center space-y-2 max-w-xl mx-auto py-6">
       <span class="text-3xs font-black uppercase text-amber-500 tracking-widest px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
@@ -46,37 +49,64 @@
       </span>
       <h2 class="text-3xl font-black tracking-tight text-white mt-3">Selecciona una Banda Sonora</h2>
       <p class="text-xs text-slate-400 leading-relaxed">
-        Elige cualquier nivel disponible para comenzar. Acierta la película antes de agotar tus 5 intentos. Los niveles acertados se marcarán en verde y los fallidos en rojo.
+        Elige cualquier nivel disponible para comenzar. Acierta antes de agotar tus 5 intentos. Los niveles acertados se marcarán en verde y los fallidos en rojo.
       </p>
+
+      <!-- Category Tabs Selector -->
+      <div class="flex justify-center gap-4 pt-6">
+        <button 
+          type="button" 
+          (click)="setCategory('movies')"
+          [ngClass]="{
+            'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20': currentCategory() === 'movies',
+            'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white': currentCategory() !== 'movies'
+          }"
+          class="px-6 py-2.5 rounded-full text-xs font-bold transition duration-200 uppercase tracking-widest flex items-center gap-2">
+          🎬 Películas
+        </button>
+        <button 
+          type="button" 
+          (click)="setCategory('series')"
+          [ngClass]="{
+            'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20': currentCategory() === 'series',
+            'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white': currentCategory() !== 'series'
+          }"
+          class="px-6 py-2.5 rounded-full text-xs font-bold transition duration-200 uppercase tracking-widest flex items-center gap-2">
+          📺 Series de TV
+        </button>
+      </div>
     </div>
 
-    <!-- API configuration Input Card -->
-    <div class="max-w-md mx-auto bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-lg backdrop-blur-sm space-y-2.5">
-      <label class="text-4xs text-amber-500 font-extrabold uppercase tracking-widest block">Clave API de TMDb (Opcional para Frames)</label>
-      <input 
-        type="password" 
-        [value]="tmdbApiKey()" 
-        (input)="tmdbApiKey.set($any($event.target).value)"
-        placeholder="Pega tu API Key de themoviedb.org aquí..." 
-        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-300 focus:outline-none focus:border-amber-500 font-mono" />
-      <p class="text-5xs text-slate-500 leading-relaxed">
-        Si introduces tu clave, los fotogramas (frames) de las películas se descargarán dinámicamente de TMDb en tiempo real. Si la dejas vacía, se usarán imágenes de fallback por defecto.
-      </p>
+
+
+    <!-- Loading levels state -->
+    <div *ngIf="isLoadingLevels()" class="flex flex-col items-center justify-center py-20 gap-4 text-center">
+      <span class="w-10 h-10 rounded-full border-4 border-amber-500/10 border-t-amber-500 animate-spin"></span>
+      <div>
+        <span class="block text-xs font-bold text-amber-500 uppercase tracking-widest">Cargando Cartelera</span>
+        <span class="text-3xs text-slate-500 mt-1 block">Conectando a Firestore para traer los niveles...</span>
+      </div>
     </div>
 
     <!-- Scalable Levels Grid (Can grow up to 300 cards smoothly) -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+    <div *ngIf="!isLoadingLevels()" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
       <button 
-        *ngFor="let level of levels; let idx = index"
+        *ngFor="let level of levels(); let idx = index"
         type="button"
         (click)="selectLevel(idx)"
+        [style.backgroundImage]="levelStatuses()[level.levelId] === 'won' && level.hints.frameUrl ? 'url(' + level.hints.frameUrl + ')' : ''"
+        [style.backgroundSize]="'cover'"
+        [style.backgroundPosition]="'center'"
         [ngClass]="{
           'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-amber-500/60 hover:bg-slate-900 hover:shadow-amber-500/5': levelStatuses()[level.levelId] === 'neutral',
-          'bg-emerald-950/40 border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/60 hover:border-emerald-500/50 shadow-lg shadow-emerald-950/20': levelStatuses()[level.levelId] === 'won',
+          'border-emerald-500 text-emerald-400 hover:border-emerald-400 shadow-lg shadow-emerald-500/10': levelStatuses()[level.levelId] === 'won',
           'bg-rose-950/30 border-rose-500/20 text-rose-400 hover:bg-rose-950/50 hover:border-rose-500/40 shadow-lg shadow-rose-950/20': levelStatuses()[level.levelId] === 'lost'
         }"
-        class="h-28 rounded-2xl border p-4 flex flex-col justify-between text-left transition duration-200 relative overflow-hidden group active:scale-95">
+        class="h-28 rounded-2xl border p-4 flex flex-col justify-between text-left transition duration-200 relative overflow-hidden group active:scale-95 bg-no-repeat">
         
+        <!-- Dark tint overlay for won items with image background -->
+        <div *ngIf="levelStatuses()[level.levelId] === 'won'" class="absolute inset-0 bg-obsidian-950/70 z-0 group-hover:bg-obsidian-950/55 transition-colors duration-200"></div>
+
         <!-- Glowing background indicator on hover -->
         <div class="absolute inset-0 bg-gradient-to-tr from-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
           [ngClass]="{
@@ -109,31 +139,49 @@
   </main>
 
   <!-- 2. GAMEPLAY VIEW: ACTIVE LEVEL GAME (Shown when currentLevelIndex is not null) -->
-  <main *ngIf="currentLevelIndex() !== null && currentLevel() !== null" class="flex-grow max-w-5xl w-full mx-auto p-6 grid grid-cols-1 md:grid-cols-12 gap-6 relative">
+  <main *ngIf="currentLevelIndex() !== null && currentLevel() !== null" class="flex-grow max-w-none w-full mx-auto px-10 py-6 grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10">
     
-    <!-- Left Column: Audio and Input Forms (md:col-span-7) -->
-    <div class="md:col-span-7 flex flex-col gap-6">
+    <!-- Left Column: Mini levels sidebar (md:col-span-3) -->
+    <div class="md:col-span-3 flex flex-col gap-2.5 max-h-[75vh] overflow-y-auto pr-2 border-r border-obsidian-800/40">
+      <span class="text-4xs font-black text-slate-500 uppercase tracking-widest px-2 mb-1">Selección Rápida</span>
+      <button 
+        *ngFor="let lvl of levels(); let idx = index" 
+        type="button"
+        (click)="selectLevel(idx)"
+        [ngClass]="{
+          'bg-obsidian-900/30 text-slate-400 hover:bg-obsidian-900/50 hover:text-white': idx !== currentLevelIndex(),
+          'bg-amber-500/10 border border-amber-500/30 text-amber-400 font-extrabold': idx === currentLevelIndex()
+        }"
+        class="text-left py-2 px-3.5 rounded-xl text-xs font-semibold flex justify-between items-center transition duration-200">
+        <span>Nivel {{ idx + 1 }}</span>
+        <span class="text-xs flex items-center">
+          <span *ngIf="levelStatuses()[lvl.levelId] === 'won'" class="text-emerald-400">●</span>
+          <span *ngIf="levelStatuses()[lvl.levelId] === 'lost'" class="text-rose-500">▲</span>
+          <span *ngIf="levelStatuses()[lvl.levelId] === 'neutral'" class="text-slate-700">○</span>
+        </span>
+      </button>
+    </div>
+    
+    <!-- Middle Column: Audio and Input Forms (md:col-span-6) -->
+    <div class="md:col-span-6 flex flex-col gap-5 justify-center">
       
-      <!-- Level Card Title/Info -->
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.04),transparent_60%)] pointer-events-none"></div>
-        <div class="relative z-10 space-y-2">
-          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-3xs font-black uppercase text-amber-500 tracking-wider">
-            Nivel {{ currentLevelIndex()! + 1 }}
-          </div>
-          <h2 class="text-2xl font-black text-white leading-tight">¿Qué película es?</h2>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Escucha la melodía y deduce el nombre del film. Si fallas, revelarás más segundos de música y datos valiosos como los actores principales y el director.
-          </p>
-        </div>
+      <!-- Level Title/Info (Clean Plain Text style, no card box) -->
+      <div class="space-y-1.5 pl-1">
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-4xs font-black uppercase text-amber-500 tracking-wider">
+          Nivel {{ currentLevelIndex()! + 1 }}
+        </span>
+        <h2 class="text-2xl font-black text-white leading-tight">¿Qué {{ currentCategory() === 'movies' ? 'película' : 'serie de TV' }} es?</h2>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Escucha la melodía y deduce el nombre oficial. Acierta antes de agotar tus 5 intentos.
+        </p>
       </div>
 
       <!-- Loading state indicator -->
-      <div *ngIf="isLoadingMedia()" class="bg-slate-900 border border-slate-800 rounded-3xl p-12 shadow-xl flex flex-col items-center justify-center gap-4 text-center">
-        <span class="w-10 h-10 rounded-full border-4 border-amber-500/10 border-t-amber-500 animate-spin"></span>
+      <div *ngIf="isLoadingMedia()" class="bg-obsidian-900/50 border border-obsidian-800 rounded-3xl p-12 shadow-xl flex flex-col items-center justify-center gap-4 text-center">
+        <span class="w-8 h-8 rounded-full border-4 border-amber-500/10 border-t-amber-500 animate-spin"></span>
         <div>
-          <span class="block text-xs font-bold text-amber-500 uppercase tracking-widest">Resolviendo Multimedia</span>
-          <span class="text-3xs text-slate-500 mt-1 block">Buscando bandas sonoras en iTunes y fotogramas en TMDb...</span>
+          <span class="block text-xs font-bold text-amber-500 uppercase tracking-widest">Cargando Audio</span>
+          <span class="text-3xs text-slate-500 mt-1 block">Buscando banda sonora...</span>
         </div>
       </div>
 
@@ -153,8 +201,8 @@
 
     </div>
 
-    <!-- Right Column: Level Hints & Status (md:col-span-5) -->
-    <div class="md:col-span-5">
+    <!-- Right Column: Level Hints & Status (md:col-span-3) -->
+    <div class="md:col-span-3">
       <app-game-status 
         [currentAttempt]="currentAttempt()" 
         [hints]="currentLevel()!.hints" 

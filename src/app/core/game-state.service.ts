@@ -1,14 +1,27 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { MOCK_OST_LEVELS } from '../data/mockLevels';
+import { db } from './firebase.config';
+import { collection, getDocs } from 'firebase/firestore';
 import { OSTLevel, LevelStatus } from '../types/ost-level.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GameStateService {
-  readonly levels: OSTLevel[] = MOCK_OST_LEVELS;
+  // All levels loaded from Firestore
+  allLevels = signal<OSTLevel[]>([]);
 
-  // TMDb API Key (Paste your API key here for dynamic frames)
+  // Current active category
+  currentCategory = signal<'movies' | 'series'>('movies');
+
+  // Loading state for the DB fetch
+  isLoadingLevels = signal<boolean>(true);
+
+  // Filtered levels based on current category
+  levels = computed<OSTLevel[]>(() => {
+    return this.allLevels().filter(l => l.category === this.currentCategory());
+  });
+
+  // TMDb API Key (Paste your API key here for dynamic fallback frames, though n8n provides them)
   tmdbApiKey = signal<string>('');
 
   // Resolved dynamic URLs resolved at runtime
@@ -30,84 +43,138 @@ export class GameStateService {
   // Computed / Derived State
   currentLevel = computed<OSTLevel | null>(() => {
     const idx = this.currentLevelIndex();
-    return idx !== null ? this.levels[idx] : null;
+    const currentList = this.levels();
+    return idx !== null && idx >= 0 && idx < currentList.length ? currentList[idx] : null;
   });
 
   allTitles = computed<string[]>(() => {
-    return this.levels.map(l => l.title);
+    return this.levels().map(l => l.title);
   });
 
   constructor() {
-    this.initializeStatuses();
+    this.loadLevelsFromFirestore();
   }
 
-  private initializeStatuses() {
+  /**
+   * Carga los niveles de Firestore en tiempo real y recupera los estados locales de completado.
+   */
+  private async loadLevelsFromFirestore() {
+    this.isLoadingLevels.set(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'levels'));
+      const fetchedLevels: OSTLevel[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        fetchedLevels.push({
+          levelId: data['levelId'] || doc.id,
+          category: data['category'] || 'movies',
+          title: data['title'] || '',
+          audioUrl: data['audioUrl'] || '',
+          correctAnswers: data['correctAnswers'] || [],
+          hints: data['hints'] || { actors: '', director: '', frameUrl: '', plot: '' }
+        });
+      });
+
+      // Ordenar por título o ID de forma consistente
+      fetchedLevels.sort((a, b) => a.title.localeCompare(b.title));
+      
+      this.allLevels.set(fetchedLevels);
+      this.initializeStatuses(fetchedLevels);
+    } catch (error) {
+      console.error('Error cargando niveles de Firestore:', error);
+    } finally {
+      this.isLoadingLevels.set(false);
+    }
+  }
+
+  private initializeStatuses(fetchedLevels: OSTLevel[]) {
+    // Intentar recuperar el estado guardado del almacenamiento local
+    const saved = localStorage.getItem('ostplay_statuses');
+    let localStatuses: Record<string, LevelStatus> = {};
+    if (saved) {
+      try {
+        localStatuses = JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parseando localStorage:', e);
+      }
+    }
+
     const initial: Record<string, LevelStatus> = {};
-    this.levels.forEach(lvl => {
-      initial[lvl.levelId] = 'neutral';
+    fetchedLevels.forEach(lvl => {
+      initial[lvl.levelId] = localStatuses[lvl.levelId] || 'neutral';
     });
     this.levelStatuses.set(initial);
+  }
+
+  /**
+   * Cambia la categoría activa y reinicia la selección de nivel.
+   */
+  setCategory(category: 'movies' | 'series') {
+    this.currentCategory.set(category);
+    this.currentLevelIndex.set(null);
   }
 
   /**
    * Navega a un nivel específico e inicia la resolución de audios/imágenes vía API.
    */
   async selectLevel(index: number) {
-    if (index >= 0 && index < this.levels.length) {
+    const currentList = this.levels();
+    if (index >= 0 && index < currentList.length) {
       this.currentLevelIndex.set(index);
       this.currentAttempt.set(1);
       this.guessHistory.set([]);
       this.gameState.set('playing');
       
       // Resolve audio and frame URLs from APIs
-      await this.resolveLevelMedia(this.levels[index]);
+      await this.resolveLevelMedia(currentList[index]);
     }
   }
 
   /**
-   * Obtiene la pista de iTunes (gratis, sin key) y el fotograma de TMDb (con key opcional).
+   * Obtiene la pista de iTunes (gratis, sin key) y usa el fotograma precargado en Firestore.
    */
   private async resolveLevelMedia(level: OSTLevel) {
     this.isLoadingMedia.set(true);
     this.resolvedAudioUrl.set('');
-    this.resolvedFrameUrl.set('');
+    
+    // El fotograma ya viene resuelto por n8n en el campo frameUrl
+    this.resolvedFrameUrl.set(level.hints.frameUrl || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=780');
 
     try {
       // 1. Fetch Audio Preview from iTunes API (No API Key required)
-      const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(level.title + ' soundtrack')}&media=music&limit=3`;
+      const searchQuery = level.category === 'series' 
+        ? `${level.title} tv soundtrack` 
+        : `${level.title} soundtrack`;
+
+      const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&media=music&limit=3`;
       const itunesRes = await fetch(itunesUrl);
       const itunesData = await itunesRes.json();
       
       if (itunesData.results && itunesData.results.length > 0) {
         this.resolvedAudioUrl.set(itunesData.results[0].previewUrl);
       } else {
-        // Fallback to static URL if defined
+        // Fallback si no hay resultado en iTunes
         this.resolvedAudioUrl.set(level.audioUrl || '');
       }
 
-      // 2. Fetch Movie Frame (Backdrop) from TMDb API (Requires API Key)
-      const key = this.tmdbApiKey().trim();
-      if (key) {
-        const tmdbUrl = `https://api.themoviedb.org/3/search/movie?api_key=${key}&query=${encodeURIComponent(level.title)}&language=es`;
-        const tmdbRes = await fetch(tmdbUrl);
-        const tmdbData = await tmdbRes.json();
-        
-        if (tmdbData.results && tmdbData.results.length > 0 && tmdbData.results[0].backdrop_path) {
-          this.resolvedFrameUrl.set(`https://image.tmdb.org/t/p/w780${tmdbData.results[0].backdrop_path}`);
-        } else {
-          // Fallback if not found in TMDb
-          this.resolvedFrameUrl.set(level.hints.frameUrl || 'images/frames/titanic_frame.png');
+      // 2. Si no hay frameUrl resuelto por n8n, lo buscamos en TMDb en vivo (si se configuró API Key)
+      if (!level.hints.frameUrl) {
+        const key = this.tmdbApiKey().trim();
+        if (key) {
+          const endpoint = level.category === 'series' ? 'tv' : 'movie';
+          const tmdbUrl = `https://api.themoviedb.org/3/search/${endpoint}?api_key=${key}&query=${encodeURIComponent(level.title)}&language=es`;
+          const tmdbRes = await fetch(tmdbUrl);
+          const tmdbData = await tmdbRes.json();
+          
+          if (tmdbData.results && tmdbData.results.length > 0 && tmdbData.results[0].backdrop_path) {
+            this.resolvedFrameUrl.set(`https://image.tmdb.org/t/p/w780${tmdbData.results[0].backdrop_path}`);
+          }
         }
-      } else {
-        // Fallback to local image or Unsplash if no API key is configured
-        this.resolvedFrameUrl.set(level.hints.frameUrl || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=780');
       }
 
     } catch (err) {
       console.error('Error resolviendo APIs multimedia de nivel:', err);
-      // Fallbacks
       this.resolvedAudioUrl.set(level.audioUrl || '');
-      this.resolvedFrameUrl.set(level.hints.frameUrl || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=780');
     } finally {
       this.isLoadingMedia.set(false);
     }
@@ -158,14 +225,24 @@ export class GameStateService {
   }
 
   private updateLevelStatus(levelId: string, status: LevelStatus) {
-    this.levelStatuses.update(current => ({
-      ...current,
-      [levelId]: status
-    }));
+    this.levelStatuses.update(current => {
+      const updated = {
+        ...current,
+        [levelId]: status
+      };
+      // Persistir en localStorage
+      localStorage.setItem('ostplay_statuses', JSON.stringify(updated));
+      return updated;
+    });
   }
 
   resetAllGame() {
-    this.initializeStatuses();
+    const initial: Record<string, LevelStatus> = {};
+    this.allLevels().forEach(lvl => {
+      initial[lvl.levelId] = 'neutral';
+    });
+    this.levelStatuses.set(initial);
+    localStorage.removeItem('ostplay_statuses');
     this.currentLevelIndex.set(null);
   }
 }

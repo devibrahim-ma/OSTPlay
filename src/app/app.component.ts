@@ -33,12 +33,19 @@ export class App {
   readonly isLoadingMedia = this.gameStateService.isLoadingMedia;
   readonly tmdbApiKey = this.gameStateService.tmdbApiKey;
 
+  readonly currentCategory = this.gameStateService.currentCategory;
+  readonly isLoadingLevels = this.gameStateService.isLoadingLevels;
+
   get levelsCount(): number {
-    return this.levels.length;
+    return this.levels().length;
   }
 
   selectLevel(index: number) {
     this.gameStateService.selectLevel(index);
+  }
+
+  setCategory(category: 'movies' | 'series') {
+    this.gameStateService.setCategory(category);
   }
 
   backToGrid() {

@@ -144,3 +144,224 @@ Para que la obtención de los fotogramas (frames) de las películas sea totalmen
      ```
 
 
+6. poner opcion de series y peliculas tendremos dos pestañas la de series y la de peliculas con unas 500 niveles cada una.
+
+---
+
+## 🔌 7. Guía del Flujo n8n para Importación Masiva (Sin Spoilers) - Usando TMDb
+
+Para garantizar una calidad de datos profesional, sin límites molestos y unificados, utilizaremos la API de **TMDb (The Movie Database)** tanto para películas como para series. Haremos una búsqueda para obtener el ID de la obra y luego una consulta de detalles que incluya los créditos (para actores y directores/creadores).
+
+---
+
+### 📦 Paso A: Configuración en la Consola de Firebase
+
+Para que n8n sepa a qué cuenta e insertar los datos en el proyecto correcto, sigue estos pasos:
+
+1. **Crear el Proyecto en Firebase:**
+   * Abre [Firebase Console](https://console.firebase.google.com/).
+   * Haz clic en **Agregar proyecto** (o selecciona uno existente). Nómbralo `OSTPlay`.
+2. **Crear la Base de Datos Firestore:**
+   * En el menú lateral, ve a **Firestore Database** (bajo la categoría *Bases de datos y almacenamiento* como se ve en tu captura).
+   * Haz clic en **Crear base de datos**.
+   * Elige **Comenzar en modo de prueba** (esencial para que n8n pueda escribir sin bloqueos iniciales).
+   * Haz clic en **Habilitar**.
+3. **Descargar la Clave de Credenciales (Service Account Key JSON):**
+   * En la barra lateral izquierda, pasa el cursor sobre **Configuración** (icono de engranaje ⚙️) y haz clic en **Cuentas de servicio** (como se ve en la captura de tu menú flotante).
+   * Haz clic abajo en el botón **Generar nueva clave privada**.
+   * Se descargará un archivo `.json` en tu ordenador. Ábrelo con un editor de texto (Bloc de Notas, VS Code) y copia todo su contenido. **Este JSON es la firma digital que le dice a n8n exactamente en qué base de datos escribir.**
+
+---
+
+### 📐 Paso B: Estructura del Flujo de n8n
+
+El flujo modificado para usar TMDb de forma unificada es el siguiente:
+
+```mermaid
+graph TD
+    A[1. Manual Trigger] --> B[2. Code: Input Títulos]
+    B --> C[3. Router / Switch]
+    C -->|Movies| D[4. HTTP: TMDb Movie Search]
+    D --> E[5. HTTP: TMDb Movie Details]
+    C -->|Series| F[6. HTTP: TMDb TV Search]
+    F --> G[7. HTTP: TMDb TV Details]
+    E --> H[8. Code: Mapper & Normalizer]
+    G --> H
+    H --> I[9. Firestore: Create or Update]
+```
+
+---
+
+### ⚙️ Paso C: Configuración Nodo por Nodo en n8n
+
+Sigue esta guía paso a paso para configurar o modificar tus nodos en n8n:
+
+#### 1. Disparador Inicial (Manual Trigger)
+* **¿Qué hace?:** Ejecuta el flujo cuando haces clic en el botón de probar en n8n.
+* **Nodo en n8n:** Borra tu actual "Webhook" y pon en su lugar **When clicking 'Test workflow'** (también llamado *Manual Trigger*).
+
+#### 2. Nodo Code: Input Títulos (JavaScript)
+* **¿Qué hace?:** Define la lista de películas y series que quieres importar sin spoilers.
+* **Configuración:**
+  * **Language:** `JavaScript`
+  * **Code:** Pega tu lista de películas y series estructuradas de esta forma:
+    ```javascript
+    return [
+      // --- Películas ---
+      { json: { nombre: "Titanic", categoria: "movies" } },
+      { json: { nombre: "Gladiator", categoria: "movies" } },
+      { json: { nombre: "Inception", categoria: "movies" } },
+      // --- Series ---
+      { json: { nombre: "Breaking Bad", categoria: "series" } },
+      { json: { nombre: "Stranger Things", categoria: "series" } },
+      { json: { nombre: "Game of Thrones", categoria: "series" } }
+    ];
+    ```
+
+#### 3. Nodo Switch (Router)
+* **¿Qué hace?:** Divide las películas y las series según la categoría.
+* **Configuración:**
+  * **Data Type:** `String`
+  * **Value 1:** `{{ $json.categoria }}`
+  * **Routing Rules:**
+    * **Rule 1:** `Equal` -> `movies` -> Salida `0` (conéctala a la rama de búsqueda de películas).
+    * **Rule 2:** `Equal` -> `series` -> Salida `1` (conéctala a la rama de búsqueda de series).
+
+#### 4. Nodo HTTP Request: TMDb Movie Search (Conectado a la salida 0 del Switch)
+* **¿Qué hace?:** Busca la película en la base de datos de TMDb usando su nombre para encontrar su ID.
+* **Configuración:**
+  * **Method:** `GET`
+  * **URL:** `https://api.themoviedb.org/3/search/movie`
+  * **Send Query Parameters:** Activo (añade estos parámetros abajo):
+    * `query`: `{{ $json.nombre }}`
+    * `api_key`: `TU_API_KEY_DE_TMDB` *(Consíguela en Settings -> API en themoviedb.org)*
+    * `language`: `es`
+
+#### 5. Nodo HTTP Request: TMDb Movie Details (Conectado a la salida de Movie Search)
+* **¿Qué hace?:** Obtiene detalles adicionales como el reparto de actores y director a partir del ID de la película.
+* **Configuración:**
+  * **Method:** `GET`
+  * **URL:** `https://api.themoviedb.org/3/movie/{{ $json.results[0]?.id }}`
+  * **Send Query Parameters:** Activo:
+    * `api_key`: `TU_API_KEY_DE_TMDB`
+    * `language`: `es`
+    * `append_to_response`: `credits`
+
+#### 6. Nodo HTTP Request: TMDb TV Search (Conectado a la salida 1 del Switch)
+* **¿Qué hace?:** Busca la serie en TMDb para encontrar su ID.
+* **Configuración:**
+  * **Method:** `GET`
+  * **URL:** `https://api.themoviedb.org/3/search/tv`
+  * **Send Query Parameters:** Activo:
+    * `query`: `{{ $json.nombre }}`
+    * `api_key`: `TU_API_KEY_DE_TMDB`
+    * `language`: `es`
+
+#### 7. Nodo HTTP Request: TMDb TV Details (Conectado a la salida de TV Search)
+* **¿Qué hace?:** Obtiene el reparto de actores y los creadores a partir del ID de la serie.
+* **Configuración:**
+  * **Method:** `GET`
+  * **URL:** `https://api.themoviedb.org/3/tv/{{ $json.results[0]?.id }}`
+  * **Send Query Parameters:** Activo:
+    * `api_key`: `TU_API_KEY_DE_TMDB`
+    * `language`: `es`
+    * `append_to_response`: `credits`
+
+#### 8. Nodo Code (Normalizador de TMDb - JavaScript)
+* **¿Qué hace?:** Conecta la salida de **ambos** nodos de Details (Movie y TV) a este nodo. Limpia los datos y los normaliza para tu base de datos.
+* **Configuración:**
+  * **Language:** `JavaScript`
+  * **Code:**
+    ```javascript
+    return $input.all().map(item => {
+      const data = item.json;
+      
+      // En TMDb, las películas usan 'title' y las series usan 'name'
+      const isMovie = data.title !== undefined;
+      const cleanTitle = isMovie ? data.title : data.name;
+      const category = isMovie ? "movies" : "series";
+      
+      // Pistas
+      const frameUrl = data.backdrop_path ? `https://image.tmdb.org/t/p/w780${data.backdrop_path}` : (data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : "");
+      const plot = data.overview || "Sinopsis no disponible";
+      
+      // Obtener director/creadores
+      let director = "Información no disponible";
+      if (isMovie) {
+        if (data.credits && data.credits.crew) {
+          const dirObj = data.credits.crew.find(c => c.job === 'Director');
+          if (dirObj) director = dirObj.name;
+        }
+      } else {
+        if (data.created_by && data.created_by.length > 0) {
+          director = data.created_by.map(c => c.name).join(', ');
+        } else if (data.credits && data.credits.crew) {
+          const execObj = data.credits.crew.find(c => c.job === 'Executive Producer');
+          if (execObj) director = execObj.name;
+        }
+      }
+      
+      // Obtener actores principales (top 3)
+      let actors = "Reparto no disponible";
+      if (data.credits && data.credits.cast) {
+        actors = data.credits.cast.slice(0, 3).map(a => a.name).join(', ');
+      }
+
+      // Normalizar respuestas válidas
+      const lowerTitle = cleanTitle.toLowerCase().trim();
+      const correctAnswers = [lowerTitle];
+      const articles = ['el ', 'la ', 'los ', 'las ', 'un ', 'una ', 'the ', 'a '];
+      for (const art of articles) {
+        if (lowerTitle.startsWith(art)) {
+          correctAnswers.push(lowerTitle.substring(art.length));
+          break;
+        }
+      }
+
+      // Generar ID único limpio de acentos y caracteres raros
+      const levelId = lowerTitle
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      return {
+        json: {
+          levelId: levelId,
+          category: category,
+          title: cleanTitle,
+          correctAnswers: correctAnswers,
+          audioUrl: "", // Para iTunes en el frontend
+          hints: {
+            actors: actors,
+            director: director,
+            frameUrl: frameUrl,
+            plot: plot
+          }
+        }
+      };
+    });
+    ```
+
+#### 9. Nodo Google Cloud Firestore (Acción: Create or update a document)
+* **¿Qué hace?:** Guarda los datos normalizados en tu base de datos Firestore de forma automática.
+* **Configuración:**
+  * **Credential:** Selecciona *Create New Credential* -> *Service Account Key*. Pega el contenido JSON que descargaste de Firebase.
+  * **Resource:** `Document`
+  * **Operation:** `Create or update a document` *(la opción equivalente a Upsert)*.
+  * **Collection:** `levels`
+  * **Document ID:** `{{ $json.levelId }}`
+  * **Data to Send:** `Define Below`
+  * **Fields to Send:** En el campo que te permite pasar un JSON personalizado o definir los campos, puedes añadir directamente cada clave:
+    * `levelId`: `{{ $json.levelId }}`
+    * `category`: `{{ $json.category }}`
+    * `title`: `{{ $json.title }}`
+    * `correctAnswers`: `{{ $json.correctAnswers }}`
+    * `audioUrl`: `{{ $json.audioUrl }}`
+    * `hints`: `{{ JSON.stringify($json.hints) }}` (o mapeado campo por campo de hints).
+    *(O si prefieres enviar todo el JSON completo estructurado, selecciona la opción de mandar JSON directamente y pon `{{ JSON.stringify($json) }}`)*.
+
+---
+
+Una vez que guardes y hagas clic en **Execute Workflow** en n8n, tu base de datos Firestore se poblará automáticamente con los 1000 niveles limpios y optimizados para consumir directamente en el código de Angular.

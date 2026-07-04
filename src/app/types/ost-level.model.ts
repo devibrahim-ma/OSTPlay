@@ -7,6 +7,7 @@ export interface MovieHints {
 
 export interface OSTLevel {
   levelId: string;
+  category?: 'movies' | 'series';
   title: string;          // Correct name of the movie
   audioUrl: string;       // URL to public mp3
   correctAnswers: string[]; // Variations (e.g. ["Titanic", "El Titanic"])
