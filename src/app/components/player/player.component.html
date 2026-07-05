@@ -28,7 +28,7 @@
     <div class="w-full h-16 rounded-xl overflow-hidden bg-obsidian-950 border border-obsidian-800/80 relative">
       <canvas #visualizerCanvas class="w-full h-full block"></canvas>
       <div *ngIf="!isAudioLoaded" class="absolute inset-0 flex items-center justify-center bg-obsidian-950/40 backdrop-blur-3xs">
-        <span class="text-5xs font-black text-amber-500 uppercase tracking-widest animate-pulse">Cargando pistas de audio...</span>
+        <span class="text-5xs font-black text-brand-purple uppercase tracking-widest animate-pulse">Cargando pistas de audio...</span>
       </div>
     </div>
 
@@ -88,7 +88,7 @@
 
       <!-- Status indicator (expanded to w-16 to avoid text overflow clashing) -->
       <div class="w-16 text-center">
-        <span *ngIf="!isAudioLoaded" class="text-4xs font-bold text-amber-500 uppercase tracking-wider animate-pulse">Carga</span>
+        <span *ngIf="!isAudioLoaded" class="text-4xs font-bold text-brand-cyan uppercase tracking-wider animate-pulse">Carga</span>
         <span *ngIf="isAudioLoaded && isPlaying" class="text-4xs font-bold text-teal-400 uppercase tracking-wider">Sonando</span>
         <span *ngIf="isAudioLoaded && !isPlaying" class="text-4xs font-bold text-slate-500 uppercase tracking-wider">Pausa</span>
       </div>

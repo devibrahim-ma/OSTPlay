@@ -108,3 +108,9 @@ Vercel detecta automáticamente proyectos creados con Angular.
    ```bash
    vercel --prod
    ```
+
+# n8n
+
+npx n8n
+
+http://localhost:5678

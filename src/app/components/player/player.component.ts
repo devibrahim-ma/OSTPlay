@@ -1,5 +1,6 @@
-import { Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, signal, computed } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, signal, computed, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { GameStateService } from '../../core/game-state.service';
 
 @Component({
   selector: 'app-player',
@@ -11,6 +12,19 @@ import { CommonModule } from '@angular/common';
 export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
   @Input() audioUrl!: string;
   @Input() currentAttempt = 1;
+  @Input() audioStartOffset?: number;
+
+  private readonly gameStateService = inject(GameStateService);
+  readonly isMuted = this.gameStateService.isMuted;
+
+  constructor() {
+    effect(() => {
+      const muted = this.isMuted();
+      if (this.audioRef) {
+        this.audioRef.nativeElement.muted = muted;
+      }
+    });
+  }
 
   @ViewChild('audioElement', { static: true }) audioRef!: ElementRef<HTMLAudioElement>;
   @ViewChild('visualizerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
@@ -37,6 +51,19 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
   get allowedDuration(): number {
     const attemptIndex = Math.min(this.currentAttempt - 1, this.playbackLimits.length - 1);
     return this.playbackLimits[attemptIndex];
+  }
+
+  get startOffset(): number {
+    if (this.audioStartOffset !== undefined && this.audioStartOffset >= 0) {
+      return this.audioStartOffset;
+    }
+    // Si la duración es mayor a 45 segundos, asumimos que es la canción completa
+    // y aplicamos un offset automático del 35% para saltar intros silenciosas.
+    // Para clips cortos de iTunes (30-40s), reproducimos desde el inicio (segundo 0).
+    if (this.totalDuration > 45) {
+      return Math.floor(this.totalDuration * 0.35);
+    }
+    return 0;
   }
 
   get progressPercentage(): number {
@@ -126,9 +153,9 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
 
       // Gradient color for playing waveform
       const gradient = ctx.createLinearGradient(0, 0, width, 0);
-      gradient.addColorStop(0, '#14b8a6'); // Teal
-      gradient.addColorStop(0.5, '#10b981'); // Emerald
-      gradient.addColorStop(1, '#06b6d4'); // Cyan
+      gradient.addColorStop(0, '#a219c7'); // Brand Purple
+      gradient.addColorStop(0.5, '#6252ce'); // Brand Indigo
+      gradient.addColorStop(1, '#14cad8'); // Brand Cyan
       ctx.strokeStyle = gradient;
 
       ctx.beginPath();
@@ -152,7 +179,7 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
       ctx.stroke();
     } else {
       // Static/Pulsing Heartbeat Mode (fallback when paused or loaded)
-      ctx.strokeStyle = 'rgba(20, 184, 166, 0.4)'; // Dim teal
+      ctx.strokeStyle = 'rgba(162, 25, 199, 0.4)'; // Dim Brand Purple
 
       ctx.beginPath();
       const amplitude = 4; // subtle wave height
@@ -191,9 +218,9 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
 
   play() {
     const audio = this.audioRef.nativeElement;
-    // If we've already exceeded the limit, reset to 0 before playing
-    if (audio.currentTime >= this.allowedDuration) {
-      audio.currentTime = 0;
+    // Si la posición actual está fuera del segmento permitido, reiniciamos a startOffset
+    if (audio.currentTime < this.startOffset || audio.currentTime >= this.startOffset + this.allowedDuration) {
+      audio.currentTime = this.startOffset;
     }
     audio.play().then(() => {
       this.isPlaying = true;
@@ -210,7 +237,7 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
 
   rewind() {
     const audio = this.audioRef.nativeElement;
-    audio.currentTime = 0;
+    audio.currentTime = this.startOffset;
     this.currentTime = 0;
     if (this.isPlaying) {
       this.play();
@@ -219,12 +246,13 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
 
   onTimeUpdate() {
     const audio = this.audioRef.nativeElement;
-    this.currentTime = audio.currentTime;
+    // Calculamos el tiempo relativo respecto al startOffset
+    this.currentTime = Math.max(0, audio.currentTime - this.startOffset);
 
-    // Check if player exceeded allowed duration for current attempt
-    if (audio.currentTime >= this.allowedDuration) {
+    // Si excede la duración permitida del intento activo
+    if (audio.currentTime >= this.startOffset + this.allowedDuration) {
       this.pause();
-      audio.currentTime = 0;
+      audio.currentTime = this.startOffset;
       this.currentTime = 0;
     }
   }
@@ -239,8 +267,12 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
     audio.volume = this.volume;
     this.totalDuration = audio.duration;
     this.isAudioLoaded = true;
+
+    // Colocar el reproductor en el offset de inicio
+    audio.currentTime = this.startOffset;
+    this.currentTime = 0;
     
-    // Auto adjust canvas size on metadata load
+    // Ajustar el canvas
     this.initCanvas();
   }
 
@@ -259,10 +291,10 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
     const clickX = event.clientX - rect.left;
     const percentage = clickX / rect.width;
     
-    // Seek only within the allowed duration segment
-    const targetTime = percentage * this.allowedDuration;
+    // Seekea relativo al startOffset
+    const targetTime = this.startOffset + (percentage * this.allowedDuration);
     this.audioRef.nativeElement.currentTime = targetTime;
-    this.currentTime = targetTime;
+    this.currentTime = percentage * this.allowedDuration;
   }
 
   formatTime(seconds: number): string {

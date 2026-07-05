@@ -1,14 +1,27 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from './core/game-state.service';
+import { NavbarComponent } from './components/navbar/navbar.component';
+import { HomeComponent } from './components/home/home.component';
+import { LevelsGridComponent } from './components/levels-grid/levels-grid.component';
 import { PlayerComponent } from './components/player/player.component';
 import { GuesserComponent } from './components/guesser/guesser.component';
 import { GameStatusComponent } from './components/game-status/game-status.component';
+import { ResetConfirmModalComponent } from './components/reset-confirm-modal/reset-confirm-modal.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, PlayerComponent, GuesserComponent, GameStatusComponent],
+  imports: [
+    CommonModule,
+    NavbarComponent,
+    HomeComponent,
+    LevelsGridComponent,
+    PlayerComponent,
+    GuesserComponent,
+    GameStatusComponent,
+    ResetConfirmModalComponent
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -27,6 +40,12 @@ export class App {
   readonly guessHistory = this.gameStateService.guessHistory;
   readonly allTitles = this.gameStateService.allTitles;
 
+  // Navigation state
+  readonly currentView = this.gameStateService.currentView;
+
+  // Global settings & features
+  readonly activeLightboxImg = this.gameStateService.activeLightboxImg;
+
   // Dynamic API resolved elements
   readonly resolvedAudioUrl = this.gameStateService.resolvedAudioUrl;
   readonly resolvedFrameUrl = this.gameStateService.resolvedFrameUrl;
@@ -36,16 +55,8 @@ export class App {
   readonly currentCategory = this.gameStateService.currentCategory;
   readonly isLoadingLevels = this.gameStateService.isLoadingLevels;
 
-  get levelsCount(): number {
-    return this.levels().length;
-  }
-
   selectLevel(index: number) {
     this.gameStateService.selectLevel(index);
-  }
-
-  setCategory(category: 'movies' | 'series') {
-    this.gameStateService.setCategory(category);
   }
 
   backToGrid() {
@@ -56,7 +67,7 @@ export class App {
     this.gameStateService.submitGuess(guess);
   }
 
-  resetGame() {
-    this.gameStateService.resetAllGame();
+  closeLightbox() {
+    this.gameStateService.activeLightboxImg.set(null);
   }
 }

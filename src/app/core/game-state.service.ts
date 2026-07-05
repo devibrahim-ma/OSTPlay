@@ -3,6 +3,16 @@ import { db } from './firebase.config';
 import { collection, getDocs } from 'firebase/firestore';
 import { OSTLevel, LevelStatus } from '../types/ost-level.model';
 
+export interface GameStats {
+  moviesPlayed: number;
+  moviesWon: number;
+  seriesPlayed: number;
+  seriesWon: number;
+  streak: number;
+  maxStreak: number;
+  distribution: number[]; // 5 indices for attempts 1-5
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -34,11 +44,34 @@ export class GameStateService {
 
   // Active level selection (null represents the grid dashboard)
   currentLevelIndex = signal<number | null>(null);
+
+  // Active navigation view
+  currentView = signal<'modes' | 'grid' | 'game'>('modes');
   
   // Per-level active attempt states
   currentAttempt = signal<number>(1); // 1 to 5
   gameState = signal<'playing' | 'won' | 'lost'>('playing');
   guessHistory = signal<string[]>([]);
+
+  // Stats tracking signal
+  stats = signal<GameStats>({
+    moviesPlayed: 0,
+    moviesWon: 0,
+    seriesPlayed: 0,
+    seriesWon: 0,
+    streak: 0,
+    maxStreak: 0,
+    distribution: [0, 0, 0, 0, 0]
+  });
+
+  // Mute state signal
+  isMuted = signal<boolean>(false);
+
+  // Active lightbox image signal
+  activeLightboxImg = signal<string | null>(null);
+
+  // Show reset confirmation modal signal
+  showResetConfirm = signal<boolean>(false);
 
   // Computed / Derived State
   currentLevel = computed<OSTLevel | null>(() => {
@@ -51,8 +84,32 @@ export class GameStateService {
     return this.levels().map(l => l.title);
   });
 
+  completedPercentage = computed<number>(() => {
+    const currentList = this.levels();
+    if (currentList.length === 0) return 0;
+    const wonCount = currentList.filter(lvl => this.levelStatuses()[lvl.levelId] === 'won').length;
+    return Math.round((wonCount / currentList.length) * 100);
+  });
+
   constructor() {
     this.loadLevelsFromFirestore();
+    this.loadLocalStats();
+  }
+
+  private loadLocalStats() {
+    const savedStats = localStorage.getItem('ostplay_stats');
+    if (savedStats) {
+      try {
+        this.stats.set(JSON.parse(savedStats));
+      } catch (e) {
+        console.error('Error parseando estadísticas:', e);
+      }
+    }
+
+    const savedMuted = localStorage.getItem('ostplay_muted');
+    if (savedMuted) {
+      this.isMuted.set(savedMuted === 'true');
+    }
   }
 
   /**
@@ -68,15 +125,21 @@ export class GameStateService {
         fetchedLevels.push({
           levelId: data['levelId'] || doc.id,
           category: data['category'] || 'movies',
-          title: data['title'] || '',
+          title: data['title'] !== undefined && data['title'] !== null ? String(data['title']) : '',
           audioUrl: data['audioUrl'] || '',
-          correctAnswers: data['correctAnswers'] || [],
-          hints: data['hints'] || { actors: '', director: '', frameUrl: '', plot: '' }
+          correctAnswers: Array.isArray(data['correctAnswers']) ? data['correctAnswers'] : [],
+          hints: {
+            actors: data['hints']?.actors || '',
+            director: data['hints']?.director || '',
+            frameUrl: data['hints']?.frameUrl || '',
+            plot: data['hints']?.plot || ''
+          },
+          audioStartOffset: data['audioStartOffset'] !== undefined ? Number(data['audioStartOffset']) : undefined
         });
       });
 
-      // Ordenar por título o ID de forma consistente
-      fetchedLevels.sort((a, b) => a.title.localeCompare(b.title));
+      // Ordenar por título o ID de forma consistente (conversión segura a string)
+      fetchedLevels.sort((a, b) => String(a.title).localeCompare(String(b.title)));
       
       this.allLevels.set(fetchedLevels);
       this.initializeStatuses(fetchedLevels);
@@ -107,11 +170,12 @@ export class GameStateService {
   }
 
   /**
-   * Cambia la categoría activa y reinicia la selección de nivel.
+   * Cambia la categoría activa y redirige a la cuadrícula de niveles.
    */
   setCategory(category: 'movies' | 'series') {
     this.currentCategory.set(category);
     this.currentLevelIndex.set(null);
+    this.currentView.set('grid');
   }
 
   /**
@@ -120,13 +184,25 @@ export class GameStateService {
   async selectLevel(index: number) {
     const currentList = this.levels();
     if (index >= 0 && index < currentList.length) {
+      const level = currentList[index];
       this.currentLevelIndex.set(index);
-      this.currentAttempt.set(1);
-      this.guessHistory.set([]);
-      this.gameState.set('playing');
+      
+      // Restaurar estado guardado si ya ha sido jugado o está en curso
+      const savedState = this.getLevelGameplayState(level.levelId);
+      if (savedState) {
+        this.currentAttempt.set(savedState.attempt);
+        this.guessHistory.set(savedState.guessHistory);
+        this.gameState.set(savedState.state);
+      } else {
+        this.currentAttempt.set(1);
+        this.guessHistory.set([]);
+        this.gameState.set('playing');
+      }
+
+      this.currentView.set('game');
       
       // Resolve audio and frame URLs from APIs
-      await this.resolveLevelMedia(currentList[index]);
+      await this.resolveLevelMedia(level);
     }
   }
 
@@ -185,6 +261,15 @@ export class GameStateService {
    */
   backToGrid() {
     this.currentLevelIndex.set(null);
+    this.currentView.set('grid');
+  }
+
+  /**
+   * Regresa al selector de modos principal.
+   */
+  goToModes() {
+    this.currentLevelIndex.set(null);
+    this.currentView.set('modes');
   }
 
   normalizeText(text: string): string {
@@ -209,19 +294,69 @@ export class GameStateService {
     if (isCorrect) {
       this.gameState.set('won');
       this.updateLevelStatus(level.levelId, 'won');
+      this.updateStats(true, this.currentAttempt(), this.currentCategory());
+      this.saveLevelGameplayState(level.levelId, this.currentAttempt(), this.guessHistory(), 'won');
       return true;
     } else {
-      this.guessHistory.update(history => [...history, guess.trim()]);
+      const updatedHistory = [...this.guessHistory(), guess.trim()];
+      this.guessHistory.set(updatedHistory);
       
       const nextAttempt = this.currentAttempt() + 1;
       if (nextAttempt <= 5) {
         this.currentAttempt.set(nextAttempt);
+        this.saveLevelGameplayState(level.levelId, nextAttempt, updatedHistory, 'playing');
       } else {
         this.gameState.set('lost');
         this.updateLevelStatus(level.levelId, 'lost');
+        this.updateStats(false, 5, this.currentCategory());
+        this.saveLevelGameplayState(level.levelId, 5, updatedHistory, 'lost');
       }
       return false;
     }
+  }
+
+  private updateStats(isWin: boolean, attempt: number, category: 'movies' | 'series') {
+    this.stats.update(curr => {
+      const updated = { ...curr };
+      if (category === 'movies') {
+        updated.moviesPlayed += 1;
+        if (isWin) updated.moviesWon += 1;
+      } else {
+        updated.seriesPlayed += 1;
+        if (isWin) updated.seriesWon += 1;
+      }
+
+      if (isWin) {
+        updated.streak += 1;
+        if (updated.streak > updated.maxStreak) {
+          updated.maxStreak = updated.streak;
+        }
+        const idx = Math.min(Math.max(0, attempt - 1), 4);
+        updated.distribution = [...updated.distribution];
+        updated.distribution[idx] += 1;
+      } else {
+        updated.streak = 0;
+      }
+
+      localStorage.setItem('ostplay_stats', JSON.stringify(updated));
+      return updated;
+    });
+  }
+
+  toggleMute() {
+    const nextMuted = !this.isMuted();
+    this.isMuted.set(nextMuted);
+    localStorage.setItem('ostplay_muted', String(nextMuted));
+  }
+
+  selectLevelByNumber(num: number): boolean {
+    const currentList = this.levels();
+    const idx = num - 1;
+    if (idx >= 0 && idx < currentList.length) {
+      this.selectLevel(idx);
+      return true;
+    }
+    return false;
   }
 
   private updateLevelStatus(levelId: string, status: LevelStatus) {
@@ -243,6 +378,44 @@ export class GameStateService {
     });
     this.levelStatuses.set(initial);
     localStorage.removeItem('ostplay_statuses');
+    localStorage.removeItem('ostplay_gameplay_states');
+
+    const initialStats: GameStats = {
+      moviesPlayed: 0,
+      moviesWon: 0,
+      seriesPlayed: 0,
+      seriesWon: 0,
+      streak: 0,
+      maxStreak: 0,
+      distribution: [0, 0, 0, 0, 0]
+    };
+    this.stats.set(initialStats);
+    localStorage.removeItem('ostplay_stats');
+
     this.currentLevelIndex.set(null);
+    this.currentView.set('modes');
+  }
+
+  private saveLevelGameplayState(levelId: string, attempt: number, guessHistory: string[], state: 'playing' | 'won' | 'lost') {
+    const saved = localStorage.getItem('ostplay_gameplay_states');
+    let gameplayStates: Record<string, { attempt: number, guessHistory: string[], state: 'playing' | 'won' | 'lost' }> = {};
+    if (saved) {
+      try {
+        gameplayStates = JSON.parse(saved);
+      } catch (e) {}
+    }
+    gameplayStates[levelId] = { attempt, guessHistory, state };
+    localStorage.setItem('ostplay_gameplay_states', JSON.stringify(gameplayStates));
+  }
+
+  private getLevelGameplayState(levelId: string): { attempt: number, guessHistory: string[], state: 'playing' | 'won' | 'lost' } | null {
+    const saved = localStorage.getItem('ostplay_gameplay_states');
+    if (saved) {
+      try {
+        const gameplayStates = JSON.parse(saved);
+        return gameplayStates[levelId] || null;
+      } catch (e) {}
+    }
+    return null;
   }
 }

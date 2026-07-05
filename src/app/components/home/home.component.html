@@ -1,0 +1,139 @@
+<main class="flex-grow max-w-5xl w-full mx-auto p-6 space-y-8 flex flex-col justify-center">
+  <div class="text-center space-y-3 max-w-xl mx-auto py-6">
+    <h2 class="text-3xl font-black tracking-tight text-white mt-3 bg-gradient-to-r from-white via-slate-100 to-brand-cyan bg-clip-text text-transparent uppercase tracking-wider">Modos de Juego</h2>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <!-- Películas Card -->
+    <button 
+      type="button" 
+      (click)="setCategory('movies')"
+      class="clapper-card h-[290px] text-left cursor-pointer group">
+      <div class="clapper-bar brand-purple"></div>
+      <div class="clapper-body">
+        <div class="clapper-card-content justify-between p-5">
+          <div class="space-y-2 w-full">
+            <!-- Imagen Fija de Películas -->
+            <div class="relative w-full h-24 rounded-lg overflow-hidden border border-obsidian-900 bg-obsidian-950">
+              <img src="assets/peliculass.jpeg" alt="Películas" class="w-full h-full object-cover" />
+             
+            </div>
+            <h3 class="text-lg font-black text-white group-hover:text-brand-purple transition-colors duration-200">Películas</h3>
+            <p class="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
+              Las bandas sonoras más icónicas de la historia del cine clásico y moderno.
+            </p>
+          </div>
+          <div class="flex justify-between items-center mt-2 w-full">
+            <span class="text-3xs font-black uppercase tracking-widest text-brand-purple">Jugar Ahora</span>
+            <span class="w-7 h-7 rounded-full bg-brand-purple/10 border border-brand-purple/20 flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition duration-300">
+              ➔
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
+
+    <!-- Series de TV Card -->
+    <button 
+      type="button" 
+      (click)="setCategory('series')"
+      class="clapper-card h-[290px] text-left cursor-pointer group">
+      <div class="clapper-bar brand-cyan"></div>
+      <div class="clapper-body">
+        <div class="clapper-card-content justify-between p-5">
+          <div class="space-y-2 w-full">
+            <!-- Imagen Fija de Series -->
+            <div class="relative w-full h-24 rounded-lg overflow-hidden border border-obsidian-900 bg-obsidian-950">
+              <img src="assets/series.jpg" alt="Series de TV" class="w-full h-full object-cover" />
+            </div>
+            <h3 class="text-lg font-black text-white group-hover:text-brand-cyan transition-colors duration-200">Series de TV</h3>
+            <p class="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
+              Temas de apertura y música incidental de tus series y shows de TV preferidos.
+            </p>
+          </div>
+          <div class="flex justify-between items-center mt-2 w-full">
+            <span class="text-3xs font-black uppercase tracking-widest text-brand-cyan">Jugar Ahora</span>
+            <span class="w-7 h-7 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan group-hover:bg-brand-cyan group-hover:text-white transition duration-300">
+              ➔
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
+
+    <!-- Daily Mode Card (Coming Soon) -->
+    <div class="clapper-card h-64 opacity-75 relative overflow-hidden group">
+      <div class="absolute top-4 right-4 bg-brand-indigo/20 border border-brand-indigo/30 text-brand-indigo px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider z-20">
+        Próximamente
+      </div>
+      <div class="clapper-bar brand-indigo"></div>
+      <div class="clapper-body">
+        <div class="clapper-card-content justify-between p-6">
+          <div class="space-y-2 flex-grow">
+            <span class="text-3xl">📅</span>
+            <h3 class="text-xl font-black text-slate-300 mt-2">Daily Challenge</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Una banda sonora al día idéntica para todos los jugadores del mundo. ¿Podrás adivinarla?
+            </p>
+          </div>
+          <div class="flex justify-between items-center mt-4 opacity-50">
+            <span class="text-3xs font-black uppercase tracking-widest text-slate-500">Bloqueado</span>
+            <span class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+              🔒
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Random Mode Card (Coming Soon) -->
+    <div class="clapper-card h-64 opacity-75 relative overflow-hidden group">
+      <div class="absolute top-4 right-4 bg-yellow-500/15 border border-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider z-20">
+        Próximamente
+      </div>
+      <div class="clapper-bar brand-yellow"></div>
+      <div class="clapper-body">
+        <div class="clapper-card-content justify-between p-6">
+          <div class="space-y-2 flex-grow">
+            <span class="text-3xl">🎲</span>
+            <h3 class="text-xl font-black text-slate-300 mt-2">Modo Aleatorio</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Mezcla infinita de películas y series con contador de racha de aciertos en tiempo real.
+            </p>
+          </div>
+          <div class="flex justify-between items-center mt-4 opacity-50">
+            <span class="text-3xs font-black uppercase tracking-widest text-slate-500">Bloqueado</span>
+            <span class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+              🔒
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Anime Card (Coming Soon) -->
+    <div class="clapper-card h-64 opacity-75 relative overflow-hidden group">
+      <div class="absolute top-4 right-4 bg-orange-500/15 border border-orange-500/20 text-orange-500 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider z-20">
+        Próximamente
+      </div>
+      <div class="clapper-bar brand-orange"></div>
+      <div class="clapper-body">
+        <div class="clapper-card-content justify-between p-6">
+          <div class="space-y-2 flex-grow">
+            <span class="text-3xl">🌸</span>
+            <h3 class="text-xl font-black text-slate-300 mt-2">Modo Anime</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Openings, endings y temas incidentales legendarios del mundo de la animación japonesa.
+            </p>
+          </div>
+          <div class="flex justify-between items-center mt-4 opacity-50">
+            <span class="text-3xs font-black uppercase tracking-widest text-slate-500">Bloqueado</span>
+            <span class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+              🔒
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>

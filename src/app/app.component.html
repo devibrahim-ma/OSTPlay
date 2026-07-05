@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-obsidian-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200 relative overflow-hidden">
+<div class="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-brand-purple/30 selection:text-brand-cyan relative overflow-x-hidden main-bg-cover pt-[85px]">
   
   <!-- Dynamic Ambient Backdrop (Cinematic mode) -->
   <div *ngIf="currentLevelIndex() !== null" class="absolute inset-0 z-0 overflow-hidden pointer-events-none transition-all duration-1000 ease-in-out">
@@ -6,137 +6,13 @@
   </div>
 
   <!-- Navigation Header -->
-  <header class="border-b border-obsidian-900 bg-obsidian-950/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <span class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-500 flex items-center justify-center font-black text-slate-950 shadow-lg shadow-amber-500/20">
-        🎬
-      </span>
-      <div>
-        <h1 class="text-xl font-black font-display tracking-widest bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">
-          OSTPLAY
-        </h1>
-        <p class="text-3xs text-slate-500 font-bold uppercase tracking-widest">Adivina la Banda Sonora de la Película y Serie</p>
-      </div>
-    </div>
+  <app-navbar></app-navbar>
 
-    <!-- Global reset / Back button -->
-    <div class="flex items-center gap-4">
-      <button 
-        *ngIf="currentLevelIndex() === null"
-        type="button"
-        (click)="resetGame()"
-        class="text-3xs font-black uppercase tracking-widest px-4 py-2 border border-slate-800 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-400 text-slate-500 rounded-full transition duration-200">
-        Reiniciar Todo
-      </button>
-      
-      <!-- Back to grid button shown when inside a level -->
-      <button 
-        *ngIf="currentLevelIndex() !== null"
-        type="button"
-        (click)="backToGrid()"
-        class="text-xs font-bold px-4 py-2 bg-slate-900 text-slate-400 border border-slate-800 rounded-full hover:border-slate-700 hover:text-white transition duration-200 flex items-center gap-1">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
-        </svg>
-        Volver a Niveles
-      </button>
-    </div>
-  </header>  <!-- 1. LANDING PAGE: LEVEL SELECTION GRID (Shown when currentLevelIndex is null) -->
-  <main *ngIf="currentLevelIndex() === null" class="flex-grow max-w-6xl w-full mx-auto p-6 space-y-8">
-    <div class="text-center space-y-2 max-w-xl mx-auto py-6">
-      <span class="text-3xs font-black uppercase text-amber-500 tracking-widest px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
-        Cartelera de Niveles
-      </span>
-      <h2 class="text-3xl font-black tracking-tight text-white mt-3">Selecciona una Banda Sonora</h2>
-      <p class="text-xs text-slate-400 leading-relaxed">
-        Elige cualquier nivel disponible para comenzar. Acierta antes de agotar tus 5 intentos. Los niveles acertados se marcarán en verde y los fallidos en rojo.
-      </p>
+  <!-- 0. LANDING PAGE: GAME MODES INDEX (Shown when currentView is 'modes') -->
+  <app-home *ngIf="currentView() === 'modes'"></app-home>
 
-      <!-- Category Tabs Selector -->
-      <div class="flex justify-center gap-4 pt-6">
-        <button 
-          type="button" 
-          (click)="setCategory('movies')"
-          [ngClass]="{
-            'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20': currentCategory() === 'movies',
-            'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white': currentCategory() !== 'movies'
-          }"
-          class="px-6 py-2.5 rounded-full text-xs font-bold transition duration-200 uppercase tracking-widest flex items-center gap-2">
-          🎬 Películas
-        </button>
-        <button 
-          type="button" 
-          (click)="setCategory('series')"
-          [ngClass]="{
-            'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20': currentCategory() === 'series',
-            'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white': currentCategory() !== 'series'
-          }"
-          class="px-6 py-2.5 rounded-full text-xs font-bold transition duration-200 uppercase tracking-widest flex items-center gap-2">
-          📺 Series de TV
-        </button>
-      </div>
-    </div>
-
-
-
-    <!-- Loading levels state -->
-    <div *ngIf="isLoadingLevels()" class="flex flex-col items-center justify-center py-20 gap-4 text-center">
-      <span class="w-10 h-10 rounded-full border-4 border-amber-500/10 border-t-amber-500 animate-spin"></span>
-      <div>
-        <span class="block text-xs font-bold text-amber-500 uppercase tracking-widest">Cargando Cartelera</span>
-        <span class="text-3xs text-slate-500 mt-1 block">Conectando a Firestore para traer los niveles...</span>
-      </div>
-    </div>
-
-    <!-- Scalable Levels Grid (Can grow up to 300 cards smoothly) -->
-    <div *ngIf="!isLoadingLevels()" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      <button 
-        *ngFor="let level of levels(); let idx = index"
-        type="button"
-        (click)="selectLevel(idx)"
-        [style.backgroundImage]="levelStatuses()[level.levelId] === 'won' && level.hints.frameUrl ? 'url(' + level.hints.frameUrl + ')' : ''"
-        [style.backgroundSize]="'cover'"
-        [style.backgroundPosition]="'center'"
-        [ngClass]="{
-          'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-amber-500/60 hover:bg-slate-900 hover:shadow-amber-500/5': levelStatuses()[level.levelId] === 'neutral',
-          'border-emerald-500 text-emerald-400 hover:border-emerald-400 shadow-lg shadow-emerald-500/10': levelStatuses()[level.levelId] === 'won',
-          'bg-rose-950/30 border-rose-500/20 text-rose-400 hover:bg-rose-950/50 hover:border-rose-500/40 shadow-lg shadow-rose-950/20': levelStatuses()[level.levelId] === 'lost'
-        }"
-        class="h-28 rounded-2xl border p-4 flex flex-col justify-between text-left transition duration-200 relative overflow-hidden group active:scale-95 bg-no-repeat">
-        
-        <!-- Dark tint overlay for won items with image background -->
-        <div *ngIf="levelStatuses()[level.levelId] === 'won'" class="absolute inset-0 bg-obsidian-950/70 z-0 group-hover:bg-obsidian-950/55 transition-colors duration-200"></div>
-
-        <!-- Glowing background indicator on hover -->
-        <div class="absolute inset-0 bg-gradient-to-tr from-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-          [ngClass]="{
-            'to-amber-500/5': levelStatuses()[level.levelId] === 'neutral',
-            'to-emerald-500/10': levelStatuses()[level.levelId] === 'won',
-            'to-rose-500/10': levelStatuses()[level.levelId] === 'lost'
-          }">
-        </div>
-
-        <div class="relative z-10 flex justify-between items-start w-full">
-          <span class="text-3xs font-black tracking-widest uppercase opacity-60">Nivel</span>
-          <!-- Status icon badge -->
-          <span class="text-xs">
-            <span *ngIf="levelStatuses()[level.levelId] === 'won'" class="text-emerald-400">●</span>
-            <span *ngIf="levelStatuses()[level.levelId] === 'lost'" class="text-rose-500">▲</span>
-            <span *ngIf="levelStatuses()[level.levelId] === 'neutral'" class="text-slate-600">○</span>
-          </span>
-        </div>
-
-        <div class="relative z-10 space-y-0.5">
-          <h3 class="text-2xl font-black font-mono tracking-tight leading-none">
-            {{ idx + 1 < 10 ? '0' : '' }}{{ idx + 1 }}
-          </h3>
-          <p class="text-5xs font-bold uppercase tracking-wider opacity-50 truncate w-full">
-            {{ levelStatuses()[level.levelId] === 'won' ? level.title : (levelStatuses()[level.levelId] === 'lost' ? 'Fallado' : 'Por jugar') }}
-          </p>
-        </div>
-      </button>
-    </div>
-  </main>
+  <!-- 1. LEVEL SELECTION GRID (Shown when currentView is 'grid') -->
+  <app-levels-grid *ngIf="currentView() === 'grid'"></app-levels-grid>
 
   <!-- 2. GAMEPLAY VIEW: ACTIVE LEVEL GAME (Shown when currentLevelIndex is not null) -->
   <main *ngIf="currentLevelIndex() !== null && currentLevel() !== null" class="flex-grow max-w-none w-full mx-auto px-10 py-6 grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10">
@@ -150,9 +26,9 @@
         (click)="selectLevel(idx)"
         [ngClass]="{
           'bg-obsidian-900/30 text-slate-400 hover:bg-obsidian-900/50 hover:text-white': idx !== currentLevelIndex(),
-          'bg-amber-500/10 border border-amber-500/30 text-amber-400 font-extrabold': idx === currentLevelIndex()
+          'bg-brand-purple/10 border border-brand-purple/30 text-brand-cyan font-extrabold': idx === currentLevelIndex()
         }"
-        class="text-left py-2 px-3.5 rounded-xl text-xs font-semibold flex justify-between items-center transition duration-200">
+        class="text-left py-2 px-3.5 rounded-xl text-xs font-semibold flex justify-between items-center transition duration-200 cursor-pointer">
         <span>Nivel {{ idx + 1 }}</span>
         <span class="text-xs flex items-center">
           <span *ngIf="levelStatuses()[lvl.levelId] === 'won'" class="text-emerald-400">●</span>
@@ -167,7 +43,7 @@
       
       <!-- Level Title/Info (Clean Plain Text style, no card box) -->
       <div class="space-y-1.5 pl-1">
-        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-4xs font-black uppercase text-amber-500 tracking-wider">
+        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-brand-purple/10 border border-brand-purple/20 text-4xs font-black uppercase text-brand-cyan tracking-wider">
           Nivel {{ currentLevelIndex()! + 1 }}
         </span>
         <h2 class="text-2xl font-black text-white leading-tight">¿Qué {{ currentCategory() === 'movies' ? 'película' : 'serie de TV' }} es?</h2>
@@ -178,9 +54,9 @@
 
       <!-- Loading state indicator -->
       <div *ngIf="isLoadingMedia()" class="bg-obsidian-900/50 border border-obsidian-800 rounded-3xl p-12 shadow-xl flex flex-col items-center justify-center gap-4 text-center">
-        <span class="w-8 h-8 rounded-full border-4 border-amber-500/10 border-t-amber-500 animate-spin"></span>
+        <span class="w-8 h-8 rounded-full border-4 border-brand-purple/10 border-t-brand-cyan animate-spin"></span>
         <div>
-          <span class="block text-xs font-bold text-amber-500 uppercase tracking-widest">Cargando Audio</span>
+          <span class="block text-xs font-bold text-brand-cyan uppercase tracking-widest">Cargando Audio</span>
           <span class="text-3xs text-slate-500 mt-1 block">Buscando banda sonora...</span>
         </div>
       </div>
@@ -189,7 +65,8 @@
       <app-player 
         *ngIf="!isLoadingMedia()"
         [audioUrl]="resolvedAudioUrl()" 
-        [currentAttempt]="currentAttempt()">
+        [currentAttempt]="currentAttempt()"
+        [audioStartOffset]="currentLevel()?.audioStartOffset">
       </app-player>
 
       <!-- Input Guesser Form component -->
@@ -217,26 +94,26 @@
         <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
         
         <div class="space-y-2">
-          <span class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-3xl mx-auto shadow-inner">
-            🏆
-          </span>
           <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mt-2">¡Completado con éxito!</h3>
           <h2 class="text-3xl font-black text-white tracking-tight leading-none mt-1">
             {{ currentLevel()!.title }}
           </h2>
           <!-- Solved Frame Preview -->
-          <div class="w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 mt-4 max-h-36">
-            <img [src]="resolvedFrameUrl()" alt="Solved Movie Frame" class="w-full h-full object-cover" />
+          <div class="w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 mt-4 aspect-video relative">
+            <!-- Fondo difuminado -->
+            <img [src]="resolvedFrameUrl()" alt="" class="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none" />
+            <!-- Imagen contenida -->
+            <img [src]="resolvedFrameUrl()" alt="Solved Movie Frame" class="relative w-full h-full object-contain z-10" />
           </div>
           <p class="text-xs text-slate-400 pt-3 leading-relaxed">
-            Has adivinado la banda sonora en el intento **{{ currentAttempt() }}** de 5.
+            Has adivinado la banda sonora en el intento {{ currentAttempt() }} de 5.
           </p>
         </div>
 
         <button 
           type="button" 
           (click)="backToGrid()"
-          class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95">
+          class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-purple to-brand-indigo hover:from-brand-indigo hover:to-brand-purple text-white font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95 shadow-lg shadow-brand-purple/25 cursor-pointer">
           Volver a la Cartelera
         </button>
       </div>
@@ -248,17 +125,17 @@
         <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-red-500 to-orange-500"></div>
 
         <div class="space-y-2">
-          <span class="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-3xl mx-auto shadow-inner">
-            🎬
-          </span>
           <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest mt-2">Fin de la Partida</h3>
           <h4 class="text-3xs text-slate-500 font-bold uppercase tracking-wider">La respuesta correcta era:</h4>
           <h2 class="text-3xl font-black text-white tracking-tight leading-none mt-1">
             {{ currentLevel()!.title }}
           </h2>
           <!-- Solved Frame Preview -->
-          <div class="w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 mt-4 max-h-36">
-            <img [src]="resolvedFrameUrl()" alt="Solved Movie Frame" class="w-full h-full object-cover" />
+          <div class="w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 mt-4 aspect-video relative">
+            <!-- Fondo difuminado -->
+            <img [src]="resolvedFrameUrl()" alt="" class="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none" />
+            <!-- Imagen contenida -->
+            <img [src]="resolvedFrameUrl()" alt="Solved Movie Frame" class="relative w-full h-full object-contain z-10" />
           </div>
           <p class="text-xs text-slate-400 pt-3 leading-relaxed">
             Has agotado tus 5 intentos sin dar con el nombre de la película.
@@ -269,7 +146,7 @@
           <button 
             type="button" 
             (click)="backToGrid()"
-            class="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95">
+            class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-purple to-brand-indigo hover:from-brand-indigo hover:to-brand-purple text-white font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95 shadow-lg shadow-brand-purple/25 cursor-pointer">
             Volver a la Cartelera
           </button>
         </div>
@@ -280,7 +157,27 @@
 
   <!-- Footer -->
   <footer class="mt-auto py-6 border-t border-slate-900 text-center text-xs text-slate-600">
-    <p>© 2026 OSTPlay. Esqueleto de juego de bandas sonoras con Tailwind y Angular.</p>
+    <p>© 2026 OSTPlay. Desarrollado por Ibrahim.</p>
   </footer>
+
+  <!-- LIGHTBOX OVERLAY -->
+  <div 
+    *ngIf="activeLightboxImg() !== null" 
+    (click)="closeLightbox()" 
+    class="fixed inset-0 bg-black/95 flex items-center justify-center p-4 backdrop-blur-md cursor-zoom-out animate-fade-in"
+    style="z-index: 9999;">
+    <button 
+      type="button" 
+      (click)="closeLightbox()" 
+      class="absolute top-6 right-6 text-white/70 hover:text-white text-2xl font-bold bg-black/40 w-12 h-12 rounded-full border border-white/10 flex items-center justify-center cursor-pointer">
+      ✕
+    </button>
+    <div class="max-w-5xl max-h-[85vh] rounded-2xl overflow-hidden border border-white/10 bg-slate-950 shadow-2xl relative" (click)="$event.stopPropagation()">
+      <img [src]="activeLightboxImg()" alt="Lightbox Frame Hint" class="w-full h-auto max-h-[85vh] object-contain" />
+    </div>
+  </div>
+
+  <!-- RESET CONFIRMATION MODAL -->
+  <app-reset-confirm-modal></app-reset-confirm-modal>
 
 </div>

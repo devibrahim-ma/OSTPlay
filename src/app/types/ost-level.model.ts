@@ -12,6 +12,7 @@ export interface OSTLevel {
   audioUrl: string;       // URL to public mp3
   correctAnswers: string[]; // Variations (e.g. ["Titanic", "El Titanic"])
   hints: MovieHints;      // Structured clues revealed on failures
+  audioStartOffset?: number; // Optional custom audio start offset in seconds
 }
 
 export type LevelStatus = 'neutral' | 'won' | 'lost';

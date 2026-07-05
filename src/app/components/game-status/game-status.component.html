@@ -25,7 +25,7 @@
   <!-- Progressive Hints list -->
   <div class="space-y-4">
     <div class="flex justify-between items-center border-b border-obsidian-850 pb-2">
-      <span class="block text-xs font-black text-amber-500 uppercase tracking-widest pl-1">
+      <span class="block text-xs font-black text-brand-cyan uppercase tracking-widest pl-1">
         Pistas Desbloqueadas
       </span>
       <span class="text-4xs text-slate-500">Se desbloquean con cada fallo</span>
@@ -40,8 +40,8 @@
       <div 
         *ngIf="currentAttempt >= 2"
         class="bg-obsidian-900 border border-obsidian-850 rounded-xl p-4 flex flex-col gap-1.5 relative overflow-hidden transition-all duration-500 shadow-sm">
-        <span class="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></span>
-        <span class="text-4xs text-amber-500 uppercase tracking-widest font-black">Pista #1: Reparto de Actores</span>
+        <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand-purple"></span>
+        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">Pista #1: Reparto de Actores</span>
         <p class="text-xs text-slate-300 font-semibold mt-0.5 leading-relaxed">{{ hints.actors }}</p>
       </div>
 
@@ -49,8 +49,8 @@
       <div 
         *ngIf="currentAttempt >= 3"
         class="bg-obsidian-900 border border-obsidian-850 rounded-xl p-4 flex flex-col gap-1.5 relative overflow-hidden transition-all duration-500 shadow-sm">
-        <span class="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></span>
-        <span class="text-4xs text-amber-500 uppercase tracking-widest font-black">Pista #2: Dirección / Creador</span>
+        <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand-purple"></span>
+        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">Pista #2: Dirección / Creador</span>
         <p class="text-xs text-slate-300 font-semibold mt-0.5 leading-relaxed">{{ hints.director }}</p>
       </div>
 
@@ -58,8 +58,8 @@
       <div 
         *ngIf="currentAttempt >= 4"
         class="bg-obsidian-900 border border-obsidian-850 rounded-xl p-4 flex flex-col gap-1.5 relative overflow-hidden transition-all duration-500 shadow-sm">
-        <span class="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></span>
-        <span class="text-4xs text-amber-500 uppercase tracking-widest font-black">Pista #3: Sinopsis / Trama</span>
+        <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand-purple"></span>
+        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">Pista #3: Sinopsis / Trama</span>
         <p class="text-xs text-slate-300 leading-relaxed font-normal mt-0.5">{{ hints.plot }}</p>
       </div>
 
@@ -67,13 +67,23 @@
       <div 
         *ngIf="currentAttempt >= 5"
         class="bg-obsidian-900 border border-obsidian-850 rounded-xl p-4 flex flex-col gap-2 relative overflow-hidden transition-all duration-500 shadow-sm">
-        <span class="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></span>
-        <span class="text-4xs text-amber-500 uppercase tracking-widest font-black">Pista #4: Fotograma / Imagen</span>
-        <div class="w-full rounded-lg overflow-hidden border border-obsidian-800 bg-obsidian-955 max-h-36">
+        <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand-purple"></span>
+        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">Pista #4: Fotograma / Imagen</span>
+        <div (click)="openLightbox()" class="w-full rounded-lg overflow-hidden border border-obsidian-800 bg-obsidian-955 aspect-video relative cursor-pointer group">
+          <!-- Fondo difuminado -->
+          <img [src]="resolvedFrameUrl" alt="" class="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none" />
+          <!-- Imagen contenida (con desenfoque permanente en la barra lateral) -->
           <img 
             [src]="resolvedFrameUrl" 
             alt="Media Frame Hint"
-            class="w-full h-full object-cover transition duration-300 hover:scale-105" />
+            class="relative w-full h-full object-contain z-10 transition duration-300 blur-lg" />
+          <!-- Overlay de zoom -->
+          <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </div>
         </div>
       </div>
     </div>
