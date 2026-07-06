@@ -139,8 +139,16 @@ export class GameStateService {
         });
       });
 
-      // Ordenar por título o ID de forma consistente (conversión segura a string)
-      fetchedLevels.sort((a, b) => String(a.title).localeCompare(String(b.title)));
+      // Mezclar los niveles usando un hash determinista del ID para que el orden sea
+      // aleatorio y no queden agrupados por nombre, pero siga siendo consistente al recargar.
+      const getLevelHash = (id: string) => {
+        let hash = 0;
+        for (let i = 0; i < id.length; i++) {
+          hash = id.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return hash;
+      };
+      fetchedLevels.sort((a, b) => getLevelHash(a.levelId) - getLevelHash(b.levelId));
 
       this.allLevels.set(fetchedLevels);
       this.initializeStatuses(fetchedLevels);
