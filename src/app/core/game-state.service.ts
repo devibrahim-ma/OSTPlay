@@ -81,7 +81,7 @@ export class GameStateService {
   });
 
   allTitles = computed<string[]>(() => {
-    return this.levels().map(l => l.title);
+    return [...this.levels().map(l => l.title)].sort((a, b) => a.localeCompare(b));
   });
 
   completedPercentage = computed<number>(() => {
