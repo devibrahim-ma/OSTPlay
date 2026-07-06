@@ -177,6 +177,7 @@ export class GameStateService {
     this.currentCategory.set(category);
     this.currentLevelIndex.set(null);
     this.currentView.set('grid');
+    window.scrollTo(0, 0);
   }
 
   /**
@@ -201,6 +202,7 @@ export class GameStateService {
       }
 
       this.currentView.set('game');
+      window.scrollTo(0, 0);
 
       // Resolve audio and frame URLs from APIs
       await this.resolveLevelMedia(level);
@@ -259,6 +261,7 @@ export class GameStateService {
   backToGrid() {
     this.currentLevelIndex.set(null);
     this.currentView.set('grid');
+    window.scrollTo(0, 0);
   }
 
   /**
@@ -267,6 +270,7 @@ export class GameStateService {
   goToModes() {
     this.currentLevelIndex.set(null);
     this.currentView.set('modes');
+    window.scrollTo(0, 0);
   }
 
   normalizeText(text: string): string {
@@ -391,6 +395,7 @@ export class GameStateService {
 
     this.currentLevelIndex.set(null);
     this.currentView.set('modes');
+    window.scrollTo(0, 0);
   }
 
   private saveLevelGameplayState(levelId: string, attempt: number, guessHistory: string[], state: 'playing' | 'won' | 'lost') {
