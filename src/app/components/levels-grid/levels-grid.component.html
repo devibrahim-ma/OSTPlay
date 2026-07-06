@@ -7,6 +7,20 @@
       Elige cualquier nivel disponible para comenzar. Acierta antes de agotar tus 5 intentos. Los niveles acertados se marcarán en verde y los fallidos en rojo.
     </p>
   </div>
+  <!-- Pagination Controls -->
+  <div *ngIf="!isLoadingLevels() && totalPages() > 1" class="flex flex-wrap justify-center items-center gap-2.5 pb-2 select-none">
+    <button 
+      *ngFor="let idx of pageIndices()"
+      type="button"
+      (click)="setPage(idx)"
+      [ngClass]="{
+        'bg-brand-purple border-brand-purple text-white shadow-lg shadow-brand-purple/20 scale-105 font-bold': currentPageChecked() === idx,
+        'bg-obsidian-900/40 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 hover:bg-obsidian-900/60': currentPageChecked() !== idx
+      }"
+      class="px-4 py-2 text-xs rounded-xl border transition-all duration-200 cursor-pointer active:scale-95">
+      {{ getPageLabel(idx) }}
+    </button>
+  </div>
 
   <!-- Loading levels state -->
   <div *ngIf="isLoadingLevels()" class="flex flex-col items-center justify-center py-20 gap-4 text-center">
@@ -20,9 +34,9 @@
   <!-- Scalable Levels Grid (Styled like cinema clapperboards with white & black top bars) -->
   <div *ngIf="!isLoadingLevels()" class="grid grid-cols-2 sm:grid-cols-3 md:col-span-4 lg:grid-cols-5 gap-4">
     <button 
-      *ngFor="let level of levels(); let idx = index"
+      *ngFor="let level of paginatedLevels(); let idx = index"
       type="button"
-      (click)="selectLevel(idx)"
+      (click)="selectLevel(idx + currentPageChecked() * pageSize)"
       [ngClass]="{
         'won': levelStatuses()[level.levelId] === 'won',
         'lost': levelStatuses()[level.levelId] === 'lost'
@@ -58,7 +72,7 @@
           
           <div class="w-full border-b border-slate-700 pb-0.5 mb-1.5 flex justify-between items-center">
             <span class="text-slate-400">Nivel:</span>
-            <span class="font-bold text-white text-xs">{{ idx + 1 < 10 ? '0' : '' }}{{ idx + 1 }}</span>
+            <span class="font-bold text-white text-xs">{{ (idx + 1 + currentPageChecked() * pageSize) < 10 ? '0' : '' }}{{ idx + 1 + currentPageChecked() * pageSize }}</span>
           </div>
 
           <div class="w-full border-b border-slate-700 pb-0.5 mb-1.5 flex justify-between items-center">
