@@ -30,8 +30,10 @@
     "@angular/platform-browser": "^21.1.0",
     "@angular/router": "^21.1.0",
     "firebase": "^12.15.0",
+    "firebase-admin": "^14.1.0",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "yt-search": "^2.13.1"
   },
   "devDependencies": {
     "@angular/build": "^21.1.4",

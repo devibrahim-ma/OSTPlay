@@ -1,16 +1,17 @@
-<div class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-6 shadow-xl relative overflow-hidden backdrop-blur-md">
+<div
+  class="bg-obsidian-900 border border-obsidian-800 rounded-2xl p-6 shadow-xl relative overflow-hidden backdrop-blur-md">
   <!-- Glow effect -->
-  <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,0.08),transparent_60%)] pointer-events-none"></div>
+  <div
+    class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(20,184,166,0.08),transparent_60%)] pointer-events-none">
+  </div>
 
   <!-- Native Audio Hidden Element -->
-  <audio 
-    #audioElement 
-    [src]="audioUrl" 
-    crossorigin="anonymous"
-    (timeupdate)="onTimeUpdate()" 
-    (ended)="onEnded()"
+  <audio *ngIf="!useYoutube" #audioElement [src]="audioUrl" crossorigin="anonymous" (timeupdate)="onTimeUpdate()" (ended)="onEnded()"
     (loadedmetadata)="onLoadedMetadata()">
   </audio>
+
+  <!-- YouTube Hidden Player Element -->
+  <div id="yt-player-container" style="position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none;"></div>
 
   <div class="relative z-10 flex flex-col gap-4">
     <!-- Header -->
@@ -27,20 +28,21 @@
     <!-- Waveform Visualizer Canvas -->
     <div class="w-full h-16 rounded-xl overflow-hidden bg-obsidian-950 border border-obsidian-800/80 relative">
       <canvas #visualizerCanvas class="w-full h-full block"></canvas>
-      <div *ngIf="!isAudioLoaded" class="absolute inset-0 flex items-center justify-center bg-obsidian-950/40 backdrop-blur-3xs">
-        <span class="text-5xs font-black text-brand-purple uppercase tracking-widest animate-pulse">Cargando pistas de audio...</span>
+      <div *ngIf="!isAudioLoaded"
+        class="absolute inset-0 flex items-center justify-center bg-obsidian-950/40 backdrop-blur-3xs">
+        <span class="text-5xs font-black text-brand-purple uppercase tracking-widest animate-pulse">Cargando pistas de
+          audio...</span>
       </div>
     </div>
 
     <!-- Timeline Bar -->
     <div class="space-y-2">
-      <div 
-        (click)="seek($event)"
-        class="w-full h-2.5 bg-obsidian-950 border border-obsidian-800 rounded-full cursor-pointer relative overflow-hidden group">
-        
+      <div
+        class="w-full h-2.5 bg-obsidian-950 border border-obsidian-800 rounded-full relative overflow-hidden group">
+
         <!-- Played progress -->
-        <div 
-          class="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(20,184,166,0.5)]" 
+        <div
+          class="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(20,184,166,0.5)]"
           [style.width.%]="progressPercentage">
         </div>
       </div>
@@ -55,56 +57,52 @@
     <!-- Controls -->
     <div class="flex justify-center items-center gap-6">
       <!-- Rewind to 0 -->
-      <button 
-        type="button"
-        (click)="rewind()"
-        [disabled]="!isAudioLoaded"
+      <button type="button" (click)="rewind()" [disabled]="!isAudioLoaded"
         class="p-2.5 bg-obsidian-950 border border-obsidian-800 rounded-full text-slate-400 hover:text-white hover:border-slate-700 hover:bg-obsidian-850 transition disabled:opacity-40 disabled:pointer-events-none active:scale-90">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
         </svg>
       </button>
 
       <!-- Play/Pause Circular Neon Button -->
-      <button 
-        type="button"
-        (click)="togglePlay()"
-        [disabled]="!isAudioLoaded"
-        [class.bg-teal-500]="isPlaying"
-        [class.text-obsidian-950]="isPlaying"
-        [class.bg-obsidian-950]="!isPlaying"
-        [class.text-teal-400]="!isPlaying"
+      <button type="button" (click)="togglePlay()" [disabled]="!isAudioLoaded" [class.bg-teal-500]="isPlaying"
+        [class.text-obsidian-950]="isPlaying" [class.bg-obsidian-950]="!isPlaying" [class.text-teal-400]="!isPlaying"
         class="w-14 h-14 rounded-full border border-teal-500/30 flex items-center justify-center shadow-lg hover:shadow-teal-500/20 transition-all duration-300 disabled:opacity-40 disabled:pointer-events-none active:scale-95">
         <!-- Play Icon -->
-        <svg *ngIf="!isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+        <svg *ngIf="!isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 translate-x-0.5" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
         </svg>
         <!-- Pause Icon -->
-        <svg *ngIf="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg *ngIf="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </button>
 
       <!-- Status indicator (expanded to w-16 to avoid text overflow clashing) -->
       <div class="w-16 text-center">
-        <span *ngIf="!isAudioLoaded" class="text-4xs font-bold text-brand-cyan uppercase tracking-wider animate-pulse">Carga</span>
-        <span *ngIf="isAudioLoaded && isPlaying" class="text-4xs font-bold text-teal-400 uppercase tracking-wider">Sonando</span>
-        <span *ngIf="isAudioLoaded && !isPlaying" class="text-4xs font-bold text-slate-500 uppercase tracking-wider">Pausa</span>
+        <span *ngIf="!isAudioLoaded"
+          class="text-4xs font-bold text-brand-cyan uppercase tracking-wider animate-pulse">Carga</span>
+        <span *ngIf="isAudioLoaded && isPlaying"
+          class="text-4xs font-bold text-teal-400 uppercase tracking-wider">Sonando</span>
+        <span *ngIf="isAudioLoaded && !isPlaying"
+          class="text-4xs font-bold text-slate-500 uppercase tracking-wider">Pausa</span>
       </div>
 
       <!-- Volume Control (protect ears) -->
       <div class="flex items-center gap-2 border-l border-obsidian-850 pl-4 ml-2">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+            d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />
         </svg>
-        <input 
-          type="range" 
-          min="0" 
-          max="1" 
-          step="0.05" 
-          [value]="volume"
-          (input)="setVolume($event)"
+        <input type="range" min="0" max="1" step="0.05" [value]="volume" (input)="setVolume($event)"
           class="w-16 h-1 bg-obsidian-950 rounded-full appearance-none cursor-pointer accent-teal-500" />
       </div>
     </div>

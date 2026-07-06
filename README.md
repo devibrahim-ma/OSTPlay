@@ -114,3 +114,13 @@ Vercel detecta automáticamente proyectos creados con Angular.
 npx n8n
 
 http://localhost:5678
+
+ibra tienes que meter en mp3 en audiourl en firebase
+
+
+
+Aplicar script para añadir audios de youtube a los niveles en la raiz del proyecto
+```
+node scripts/populate-youtube-ids.js
+```
+

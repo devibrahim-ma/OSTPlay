@@ -10,6 +10,7 @@ export interface OSTLevel {
   category?: 'movies' | 'series';
   title: string;          // Correct name of the movie
   audioUrl: string;       // URL to public mp3
+  youtubeId?: string;     // Optional YouTube video ID
   correctAnswers: string[]; // Variations (e.g. ["Titanic", "El Titanic"])
   hints: MovieHints;      // Structured clues revealed on failures
   audioStartOffset?: number; // Optional custom audio start offset in seconds

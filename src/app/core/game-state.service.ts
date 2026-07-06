@@ -47,7 +47,7 @@ export class GameStateService {
 
   // Active navigation view
   currentView = signal<'modes' | 'grid' | 'game'>('modes');
-  
+
   // Per-level active attempt states
   currentAttempt = signal<number>(1); // 1 to 5
   gameState = signal<'playing' | 'won' | 'lost'>('playing');
@@ -127,6 +127,7 @@ export class GameStateService {
           category: data['category'] || 'movies',
           title: data['title'] !== undefined && data['title'] !== null ? String(data['title']) : '',
           audioUrl: data['audioUrl'] || '',
+          youtubeId: data['youtubeId'] || '',
           correctAnswers: Array.isArray(data['correctAnswers']) ? data['correctAnswers'] : [],
           hints: {
             actors: data['hints']?.actors || '',
@@ -140,7 +141,7 @@ export class GameStateService {
 
       // Ordenar por título o ID de forma consistente (conversión segura a string)
       fetchedLevels.sort((a, b) => String(a.title).localeCompare(String(b.title)));
-      
+
       this.allLevels.set(fetchedLevels);
       this.initializeStatuses(fetchedLevels);
     } catch (error) {
@@ -186,7 +187,7 @@ export class GameStateService {
     if (index >= 0 && index < currentList.length) {
       const level = currentList[index];
       this.currentLevelIndex.set(index);
-      
+
       // Restaurar estado guardado si ya ha sido jugado o está en curso
       const savedState = this.getLevelGameplayState(level.levelId);
       if (savedState) {
@@ -200,7 +201,7 @@ export class GameStateService {
       }
 
       this.currentView.set('game');
-      
+
       // Resolve audio and frame URLs from APIs
       await this.resolveLevelMedia(level);
     }
@@ -212,24 +213,20 @@ export class GameStateService {
   private async resolveLevelMedia(level: OSTLevel) {
     this.isLoadingMedia.set(true);
     this.resolvedAudioUrl.set('');
-    
+
     // El fotograma ya viene resuelto por n8n en el campo frameUrl
     this.resolvedFrameUrl.set(level.hints.frameUrl || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=780');
 
     try {
-      // 1. Fetch Audio Preview from iTunes API (No API Key required)
-      const searchQuery = level.category === 'series' 
-        ? `${level.title} tv soundtrack` 
-        : `${level.title} soundtrack`;
-
-      const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&media=music&limit=3`;
-      const itunesRes = await fetch(itunesUrl);
-      const itunesData = await itunesRes.json();
-      
-      if (itunesData.results && itunesData.results.length > 0) {
-        this.resolvedAudioUrl.set(itunesData.results[0].previewUrl);
+      // 1. Resolve YouTube Video ID (prioritize level.youtubeId, then extract from level.audioUrl)
+      if (level.youtubeId) {
+        this.resolvedAudioUrl.set(level.youtubeId);
+      } else if (level.audioUrl && (level.audioUrl.includes('youtube.com') || level.audioUrl.includes('youtu.be'))) {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = level.audioUrl.match(regExp);
+        const videoId = (match && match[2].length === 11) ? match[2] : null;
+        this.resolvedAudioUrl.set(videoId || level.audioUrl);
       } else {
-        // Fallback si no hay resultado en iTunes
         this.resolvedAudioUrl.set(level.audioUrl || '');
       }
 
@@ -241,7 +238,7 @@ export class GameStateService {
           const tmdbUrl = `https://api.themoviedb.org/3/search/${endpoint}?api_key=${key}&query=${encodeURIComponent(level.title)}&language=es`;
           const tmdbRes = await fetch(tmdbUrl);
           const tmdbData = await tmdbRes.json();
-          
+
           if (tmdbData.results && tmdbData.results.length > 0 && tmdbData.results[0].backdrop_path) {
             this.resolvedFrameUrl.set(`https://image.tmdb.org/t/p/w780${tmdbData.results[0].backdrop_path}`);
           }
@@ -300,7 +297,7 @@ export class GameStateService {
     } else {
       const updatedHistory = [...this.guessHistory(), guess.trim()];
       this.guessHistory.set(updatedHistory);
-      
+
       const nextAttempt = this.currentAttempt() + 1;
       if (nextAttempt <= 5) {
         this.currentAttempt.set(nextAttempt);
@@ -402,7 +399,7 @@ export class GameStateService {
     if (saved) {
       try {
         gameplayStates = JSON.parse(saved);
-      } catch (e) {}
+      } catch (e) { }
     }
     gameplayStates[levelId] = { attempt, guessHistory, state };
     localStorage.setItem('ostplay_gameplay_states', JSON.stringify(gameplayStates));
@@ -414,7 +411,7 @@ export class GameStateService {
       try {
         const gameplayStates = JSON.parse(saved);
         return gameplayStates[levelId] || null;
-      } catch (e) {}
+      } catch (e) { }
     }
     return null;
   }
