@@ -124,3 +124,4 @@ Aplicar script para añadir audios de youtube a los niveles en la raiz del proye
 node scripts/populate-youtube-ids.js
 ```
 
+te falta pasarlo a app con capacitor

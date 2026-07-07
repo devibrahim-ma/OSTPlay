@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from '../../core/game-state.service';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-navbar',
@@ -14,12 +15,37 @@ import { GameStateService } from '../../core/game-state.service';
 })
 export class NavbarComponent {
   readonly gameStateService = inject(GameStateService);
+  readonly translationService = inject(TranslationService);
+
+  readonly currentLang = this.translationService.currentLang;
+  t(key: string): string {
+    return this.translationService.t(key);
+  }
+
+  setLanguage(lang: 'es' | 'en') {
+    this.translationService.setLanguage(lang);
+  }
 
   readonly currentView = this.gameStateService.currentView;
   readonly completedPercentage = this.gameStateService.completedPercentage;
   readonly stats = this.gameStateService.stats;
 
+  readonly animeStreak = this.gameStateService.animeModeService.animeStreak;
+  readonly maxAnimeStreak = this.gameStateService.animeModeService.maxAnimeStreak;
+  readonly randomStreak = this.gameStateService.randomModeService.randomStreak;
+  readonly maxRandomStreak = this.gameStateService.randomModeService.maxRandomStreak;
+
   showStatsDropdown = false;
+  showLangDropdown = false;
+
+  toggleLangDropdown() {
+    this.showLangDropdown = !this.showLangDropdown;
+  }
+
+  selectLanguage(lang: 'es' | 'en') {
+    this.setLanguage(lang);
+    this.showLangDropdown = false;
+  }
 
   backToGrid() {
     this.gameStateService.backToGrid();

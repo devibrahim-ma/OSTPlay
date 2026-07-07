@@ -8,6 +8,9 @@ import { PlayerComponent } from './components/player/player.component';
 import { GuesserComponent } from './components/guesser/guesser.component';
 import { GameStatusComponent } from './components/game-status/game-status.component';
 import { ResetConfirmModalComponent } from './components/reset-confirm-modal/reset-confirm-modal.component';
+import { DailyStatusComponent } from './components/daily-status/daily-status.component';
+import { SurvivalStatsComponent } from './components/survival-stats/survival-stats.component';
+import { TranslationService } from './core/i18n/translation.service';
 
 @Component({
   selector: 'app-root',
@@ -20,13 +23,20 @@ import { ResetConfirmModalComponent } from './components/reset-confirm-modal/res
     PlayerComponent,
     GuesserComponent,
     GameStatusComponent,
-    ResetConfirmModalComponent
+    ResetConfirmModalComponent,
+    DailyStatusComponent,
+    SurvivalStatsComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class App {
   readonly gameStateService = inject(GameStateService);
+  readonly translationService = inject(TranslationService);
+
+  t(key: string): string {
+    return this.translationService.t(key);
+  }
 
   // Expose levels list and statuses
   readonly levels = this.gameStateService.levels;
@@ -34,14 +44,15 @@ export class App {
 
   // Active game states
   readonly currentLevelIndex = this.gameStateService.currentLevelIndex;
-  readonly currentLevel = this.gameStateService.currentLevel;
+  readonly currentLevel = this.gameStateService.translatedLevel;
   readonly currentAttempt = this.gameStateService.currentAttempt;
   readonly gameState = this.gameStateService.gameState;
   readonly guessHistory = this.gameStateService.guessHistory;
-  readonly allTitles = this.gameStateService.allTitles;
+  readonly allTitles = this.gameStateService.displayTitles;
 
   // Navigation state
   readonly currentView = this.gameStateService.currentView;
+  readonly currentGameMode = this.gameStateService.currentGameMode;
 
   // Global settings & features
   readonly activeLightboxImg = this.gameStateService.activeLightboxImg;
@@ -61,6 +72,10 @@ export class App {
 
   backToGrid() {
     this.gameStateService.backToGrid();
+  }
+
+  nextLevel() {
+    this.gameStateService.nextLevel();
   }
 
   onGuessSubmitted(guess: string) {

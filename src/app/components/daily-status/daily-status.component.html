@@ -1,0 +1,62 @@
+<div class="max-w-md w-full mx-auto my-12 bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-6 relative overflow-hidden backdrop-blur-md select-none">
+  <!-- Glowing top line depending on outcome -->
+  <div 
+    class="absolute top-0 inset-x-0 h-1.5"
+    [ngClass]="{
+      'bg-gradient-to-r from-emerald-500 to-teal-400': dailyState()?.state === 'won',
+      'bg-gradient-to-r from-red-500 to-orange-500': dailyState()?.state === 'lost'
+    }">
+  </div>
+
+  <div class="space-y-2">
+    <h3 
+      class="text-xs font-black uppercase tracking-widest mt-2"
+      [ngClass]="{
+        'text-emerald-400': dailyState()?.state === 'won',
+        'text-rose-500': dailyState()?.state === 'lost'
+      }">
+      {{ t('DAILY_STATUS.COMPLETED') }}
+    </h3>
+    
+    <h4 class="text-3xs text-slate-500 font-bold uppercase tracking-wider">
+      {{ t('GAME.INCORRECT_ANSWER') }}
+    </h4>
+    <h2 class="text-3xl font-black text-white tracking-tight leading-none mt-1">
+      {{ dailyLevel()?.title }}
+    </h2>
+
+    <!-- Solved Frame Preview -->
+    <div class="w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 mt-4 aspect-video relative">
+      <!-- Blur backdrop -->
+      <img [src]="resolvedFrameUrl()" alt="" class="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none" />
+      <!-- Content frame -->
+      <img [src]="resolvedFrameUrl()" alt="Daily Challenge Resolved Frame" class="relative w-full h-full object-contain z-10" />
+    </div>
+
+    <p class="text-xs text-slate-400 pt-3 leading-relaxed">
+      <span *ngIf="dailyState()?.state === 'won'">
+        {{ t('GAME.CORRECT_ANSWER_DESC') }}<strong class="text-emerald-400">{{ dailyState()?.attempt }}</strong> / 5.
+      </span>
+      <span *ngIf="dailyState()?.state === 'lost'">
+        {{ t('GAME.INCORRECT_ANSWER_DESC') }}
+      </span>
+    </p>
+  </div>
+
+  <!-- Countdown Timer Section -->
+  <div class="bg-obsidian-950/60 rounded-2xl p-5 border border-slate-800/60 space-y-2">
+    <span class="text-3xs font-black uppercase text-slate-500 tracking-widest block">
+      {{ t('DAILY_STATUS.NEXT_CHALLENGE') }}
+    </span>
+    <span class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan via-brand-indigo to-brand-purple font-mono tracking-widest drop-shadow-[0_0_10px_rgba(20,202,216,0.15)] block">
+      {{ timeLeft() }}
+    </span>
+  </div>
+
+  <button 
+    type="button" 
+    (click)="backToModes()"
+    class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-purple to-brand-indigo hover:from-brand-indigo hover:to-brand-purple text-white font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95 shadow-brand-purple/25 cursor-pointer">
+    {{ t('GAME.BACK_HOME') }}
+  </button>
+</div>

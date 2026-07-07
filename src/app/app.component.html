@@ -1,163 +1,242 @@
 <div class="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-brand-purple/30 selection:text-brand-cyan relative overflow-x-hidden main-bg-cover pt-[85px]">
   
   <!-- Dynamic Ambient Backdrop (Cinematic mode) -->
-  <div *ngIf="currentLevelIndex() !== null" class="absolute inset-0 z-0 overflow-hidden pointer-events-none transition-all duration-1000 ease-in-out">
+  <div *ngIf="currentLevel() !== null" class="absolute inset-0 z-0 overflow-hidden pointer-events-none transition-all duration-1000 ease-in-out">
     <img [src]="resolvedFrameUrl()" alt="" class="w-full h-full object-cover scale-110 blur-3xl opacity-15 ambient-glow" />
   </div>
 
   <!-- Navigation Header -->
   <app-navbar></app-navbar>
 
-  <!-- 0. LANDING PAGE: GAME MODES INDEX (Shown when currentView is 'modes') -->
+  <!-- 0. LANDING PAGE: GAME MODES INDEX -->
   <app-home *ngIf="currentView() === 'modes'"></app-home>
 
-  <!-- 1. LEVEL SELECTION GRID (Shown when currentView is 'grid') -->
+  <!-- 1. LEVEL SELECTION GRID -->
   <app-levels-grid *ngIf="currentView() === 'grid'"></app-levels-grid>
 
-  <!-- 2. GAMEPLAY VIEW: ACTIVE LEVEL GAME (Shown when currentLevelIndex is not null) -->
-  <main *ngIf="currentLevelIndex() !== null && currentLevel() !== null" class="flex-grow max-w-none w-full mx-auto px-10 py-6 grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10">
+  <!-- 2. GAMEPLAY VIEW: ACTIVE LEVEL GAME -->
+  <main *ngIf="currentView() === 'game' && currentLevel() !== null" class="flex-grow max-w-none w-full mx-auto px-10 py-6 grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10">
     
-    <!-- Left Column: Mini levels sidebar (md:col-span-3) -->
-    <div class="md:col-span-3 flex flex-col gap-2.5 max-h-[75vh] overflow-y-auto pr-2 border-r border-obsidian-800/40">
-      <span class="text-4xs font-black text-slate-500 uppercase tracking-widest px-2 mb-1">Selección Rápida</span>
-      <button 
-        *ngFor="let lvl of levels(); let idx = index" 
-        type="button"
-        (click)="selectLevel(idx)"
-        [ngClass]="{
-          'bg-obsidian-900/30 text-slate-400 hover:bg-obsidian-900/50 hover:text-white': idx !== currentLevelIndex(),
-          'bg-brand-purple/10 border border-brand-purple/30 text-brand-cyan font-extrabold': idx === currentLevelIndex()
-        }"
-        class="text-left py-2 px-3.5 rounded-xl text-xs font-semibold flex justify-between items-center transition duration-200 cursor-pointer">
-        <span>Nivel {{ idx + 1 }}</span>
-        <span class="text-xs flex items-center">
-          <span *ngIf="levelStatuses()[lvl.levelId] === 'won'" class="text-emerald-400">●</span>
-          <span *ngIf="levelStatuses()[lvl.levelId] === 'lost'" class="text-rose-500">▲</span>
-          <span *ngIf="levelStatuses()[lvl.levelId] === 'neutral'" class="text-slate-700">○</span>
-        </span>
-      </button>
+    <!-- If it's Daily Mode and it's already completed today -->
+    <div *ngIf="currentGameMode() === 'daily' && gameStateService.dailyModeService.isDailyCompleted()" class="md:col-span-12 flex justify-center items-center py-6">
+      <app-daily-status></app-daily-status>
     </div>
-    
-    <!-- Middle Column: Audio and Input Forms (md:col-span-6) -->
-    <div class="md:col-span-6 flex flex-col gap-5 justify-center">
+
+    <!-- If playing normally -->
+    <ng-container *ngIf="!(currentGameMode() === 'daily' && gameStateService.dailyModeService.isDailyCompleted())">
       
-      <!-- Level Title/Info (Clean Plain Text style, no card box) -->
-      <div class="space-y-1.5 pl-1">
-        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-brand-purple/10 border border-brand-purple/20 text-4xs font-black uppercase text-brand-cyan tracking-wider">
-          Nivel {{ currentLevelIndex()! + 1 }}
-        </span>
-        <h2 class="text-2xl font-black text-white leading-tight">¿Qué {{ currentCategory() === 'movies' ? 'película' : 'serie de TV' }} es?</h2>
-        <p class="text-xs text-slate-400 leading-relaxed">
-          Escucha la melodía y deduce el nombre oficial. Acierta antes de agotar tus 5 intentos.
-        </p>
-      </div>
-
-      <!-- Loading state indicator -->
-      <div *ngIf="isLoadingMedia()" class="bg-obsidian-900/50 border border-obsidian-800 rounded-3xl p-12 shadow-xl flex flex-col items-center justify-center gap-4 text-center">
-        <span class="w-8 h-8 rounded-full border-4 border-brand-purple/10 border-t-brand-cyan animate-spin"></span>
-        <div>
-          <span class="block text-xs font-bold text-brand-cyan uppercase tracking-widest">Cargando Audio</span>
-          <span class="text-3xs text-slate-500 mt-1 block">Buscando banda sonora...</span>
-        </div>
-      </div>
-
-      <!-- Player Component wrapper -->
-      <app-player 
-        *ngIf="!isLoadingMedia()"
-        [audioUrl]="resolvedAudioUrl()" 
-        [currentAttempt]="currentAttempt()"
-        [audioStartOffset]="currentLevel()?.audioStartOffset">
-      </app-player>
-
-      <!-- Input Guesser Form component -->
-      <app-guesser 
-        *ngIf="gameState() === 'playing' && !isLoadingMedia()"
-        [autocompleteOptions]="allTitles()" 
-        (guessSubmitted)="onGuessSubmitted($event)">
-      </app-guesser>
-
-    </div>
-
-    <!-- Right Column: Level Hints & Status (md:col-span-3) -->
-    <div class="md:col-span-3">
-      <app-game-status 
-        [currentAttempt]="currentAttempt()" 
-        [hints]="currentLevel()!.hints" 
-        [resolvedFrameUrl]="resolvedFrameUrl()"
-        [guessHistory]="guessHistory()">
-      </app-game-status>
-    </div>
-
-    <!-- GAME OVER OVERLAY: WON -->
-    <div *ngIf="gameState() === 'won'" class="absolute inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl shadow-emerald-500/5 text-center space-y-6 relative overflow-hidden">
-        <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+      <!-- Left Column: Mini levels / Info sidebar (md:col-span-3) -->
+      <div class="md:col-span-3 flex flex-col gap-2.5 max-h-[75vh] overflow-y-auto pr-2 border-r border-obsidian-800/40">
         
-        <div class="space-y-2">
-          <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mt-2">¡Completado con éxito!</h3>
-          <h2 class="text-3xl font-black text-white tracking-tight leading-none mt-1">
-            {{ currentLevel()!.title }}
-          </h2>
-          <!-- Solved Frame Preview -->
-          <div class="w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 mt-4 aspect-video relative">
-            <!-- Fondo difuminado -->
-            <img [src]="resolvedFrameUrl()" alt="" class="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none" />
-            <!-- Imagen contenida -->
-            <img [src]="resolvedFrameUrl()" alt="Solved Movie Frame" class="relative w-full h-full object-contain z-10" />
-          </div>
-          <p class="text-xs text-slate-400 pt-3 leading-relaxed">
-            Has adivinado la banda sonora en el intento {{ currentAttempt() }} de 5.
-          </p>
-        </div>
-
-        <button 
-          type="button" 
-          (click)="backToGrid()"
-          class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-purple to-brand-indigo hover:from-brand-indigo hover:to-brand-purple text-white font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95 shadow-lg shadow-brand-purple/25 cursor-pointer">
-          Volver a la Cartelera
-        </button>
-      </div>
-    </div>
-
-    <!-- GAME OVER OVERLAY: LOST -->
-    <div *ngIf="gameState() === 'lost'" class="absolute inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl shadow-red-500/5 text-center space-y-6 relative overflow-hidden">
-        <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-red-500 to-orange-500"></div>
-
-        <div class="space-y-2">
-          <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest mt-2">Fin de la Partida</h3>
-          <h4 class="text-3xs text-slate-500 font-bold uppercase tracking-wider">La respuesta correcta era:</h4>
-          <h2 class="text-3xl font-black text-white tracking-tight leading-none mt-1">
-            {{ currentLevel()!.title }}
-          </h2>
-          <!-- Solved Frame Preview -->
-          <div class="w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 mt-4 aspect-video relative">
-            <!-- Fondo difuminado -->
-            <img [src]="resolvedFrameUrl()" alt="" class="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none" />
-            <!-- Imagen contenida -->
-            <img [src]="resolvedFrameUrl()" alt="Solved Movie Frame" class="relative w-full h-full object-contain z-10" />
-          </div>
-          <p class="text-xs text-slate-400 pt-3 leading-relaxed">
-            Has agotado tus 5 intentos sin dar con el nombre de la película.
-          </p>
-        </div>
-
-        <div class="flex flex-col gap-3">
+        <!-- Classic / Anime grid selection -->
+        <ng-container *ngIf="currentGameMode() !== 'random' && currentGameMode() !== 'daily'">
+          <span class="text-4xs font-black text-slate-500 uppercase tracking-widest px-2 mb-1">
+            {{ t('GAME.QUICK_SELECT') }}
+          </span>
           <button 
-            type="button" 
-            (click)="backToGrid()"
-            class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-purple to-brand-indigo hover:from-brand-indigo hover:to-brand-purple text-white font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95 shadow-lg shadow-brand-purple/25 cursor-pointer">
-            Volver a la Cartelera
+            *ngFor="let lvl of levels(); let idx = index" 
+            type="button"
+            (click)="selectLevel(idx)"
+            [ngClass]="{
+              'bg-obsidian-900/30 text-slate-400 hover:bg-obsidian-900/50 hover:text-white': idx !== currentLevelIndex(),
+              'bg-brand-purple/10 border border-brand-purple/30 text-brand-cyan font-extrabold': idx === currentLevelIndex()
+            }"
+            class="text-left py-2 px-3.5 rounded-xl text-xs font-semibold flex justify-between items-center transition duration-200 cursor-pointer">
+            <span>{{ t('GAME.LEVEL') }} {{ idx + 1 }}</span>
+            <span class="text-xs flex items-center">
+              <span *ngIf="levelStatuses()[lvl.levelId] === 'won'" class="text-emerald-400">●</span>
+              <span *ngIf="levelStatuses()[lvl.levelId] === 'lost'" class="text-rose-500">▲</span>
+              <span *ngIf="levelStatuses()[lvl.levelId] === 'neutral'" class="text-slate-700">○</span>
+            </span>
           </button>
+        </ng-container>
+
+        <!-- Random Mode Info & Stats -->
+        <div *ngIf="currentGameMode() === 'random'" class="space-y-4 p-4 bg-slate-900/30 border border-slate-800/50 rounded-2xl text-left">
+          <app-survival-stats></app-survival-stats>
+          <div class="space-y-1.5 text-xs pt-2">
+            <span class="block font-black text-slate-400 uppercase text-[9px] tracking-wider">
+              {{ t('GAME.RULES_TITLE') }}
+            </span>
+            <p class="text-3xs text-slate-500 leading-relaxed">
+              {{ t('GAME.RANDOM_RULES') }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Daily Challenge Info -->
+        <div *ngIf="currentGameMode() === 'daily'" class="space-y-4 p-4 bg-slate-900/30 border border-slate-800/50 rounded-2xl text-left">
+          <div class="space-y-1.5 text-xs pt-1">
+            <span class="block font-black text-slate-400 uppercase text-[9px] tracking-wider">
+              {{ t('GAME.ABOUT_MODE') }}
+            </span>
+            <p class="text-3xs text-slate-500 leading-relaxed">
+              {{ t('GAME.DAILY_RULES') }}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+      
+      <!-- Middle Column: Audio and Input Forms (md:col-span-6) -->
+      <div class="md:col-span-6 flex flex-col gap-5 justify-center">
+        
+        <!-- Level Title/Info (Clean Plain Text style, no card box) -->
+        <div class="space-y-1.5 pl-1">
+          <span *ngIf="currentGameMode() !== 'random' && currentGameMode() !== 'daily'" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-brand-purple/10 border border-brand-purple/20 text-4xs font-black uppercase text-brand-cyan tracking-wider">
+            {{ t('GAME.LEVEL') }} {{ currentLevelIndex()! + 1 }}
+          </span>
+          <span *ngIf="currentGameMode() === 'random'" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-brand-yellow/15 border border-brand-yellow/30 text-4xs font-black uppercase text-yellow-500 tracking-wider">
+            {{ t('NAVBAR.RANDOM') }}
+          </span>
+          <span *ngIf="currentGameMode() === 'daily'" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-brand-indigo/10 border border-brand-indigo/20 text-4xs font-black uppercase text-brand-indigo tracking-wider">
+            {{ t('NAVBAR.DAILY') }}
+          </span>
+          
+          <h2 class="text-2xl font-black text-white leading-tight">
+            <span *ngIf="currentGameMode() === 'movies'">{{ t('GAME.GUESS_MOVIE') }}</span>
+            <span *ngIf="currentGameMode() === 'series'">{{ t('GAME.GUESS_SERIES') }}</span>
+            <span *ngIf="currentGameMode() === 'anime'">{{ t('GAME.GUESS_ANIME') }}</span>
+            <span *ngIf="currentGameMode() === 'random'">{{ t('GAME.GUESS_MIX') }}</span>
+            <span *ngIf="currentGameMode() === 'daily'">{{ t('GAME.GUESS_MIX') }}</span>
+          </h2>
+          
+          <p class="text-xs text-slate-400 leading-relaxed">
+            {{ t('GAME.LISTEN_NOTE') }}
+          </p>
+        </div>
 
+        <!-- Loading state indicator -->
+        <div *ngIf="isLoadingMedia()" class="bg-obsidian-950/50 border border-slate-800 rounded-3xl p-12 shadow-xl flex flex-col items-center justify-center gap-4 text-center">
+          <span class="w-8 h-8 rounded-full border-4 border-brand-purple/10 border-t-brand-cyan animate-spin"></span>
+          <div>
+            <span class="block text-xs font-bold text-brand-cyan uppercase tracking-widest">
+              {{ t('GAME.LOADING_AUDIO') }}
+            </span>
+            <span class="text-3xs text-slate-500 mt-1 block">
+              {{ t('GAME.SEARCHING_SOUNDTRACK') }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Player Component wrapper -->
+        <app-player 
+          *ngIf="!isLoadingMedia()"
+          [audioUrl]="resolvedAudioUrl()" 
+          [currentAttempt]="currentAttempt()"
+          [audioStartOffset]="currentLevel()?.audioStartOffset">
+        </app-player>
+
+        <!-- Input Guesser Form component -->
+        <app-guesser 
+          *ngIf="gameState() === 'playing' && !isLoadingMedia()"
+          [autocompleteOptions]="allTitles()" 
+          (guessSubmitted)="onGuessSubmitted($event)">
+        </app-guesser>
+
+      </div>
+
+      <!-- Right Column: Level Hints & Status (md:col-span-3) -->
+      <div class="md:col-span-3">
+        <app-game-status 
+          [currentAttempt]="currentAttempt()" 
+          [hints]="currentLevel()!.hints" 
+          [resolvedFrameUrl]="resolvedFrameUrl()"
+          [guessHistory]="guessHistory()">
+        </app-game-status>
+      </div>
+
+      <!-- GAME OVER OVERLAY: WON -->
+      <div *ngIf="gameState() === 'won'" class="absolute inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl shadow-emerald-500/5 text-center space-y-6 relative overflow-hidden">
+          <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+          
+          <div class="space-y-2">
+            <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mt-2">
+              {{ t('GAME.CONGRATS') }}
+            </h3>
+            <h2 class="text-3xl font-black text-white tracking-tight leading-none mt-1">
+              {{ currentLevel()!.title }}
+            </h2>
+            <!-- Solved Frame Preview -->
+            <div class="w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 mt-4 aspect-video relative">
+              <!-- Fondo difuminado -->
+              <img [src]="resolvedFrameUrl()" alt="" class="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none" />
+              <!-- Imagen contenida -->
+              <img [src]="resolvedFrameUrl()" alt="Solved Movie Frame" class="relative w-full h-full object-contain z-10" />
+            </div>
+            <p class="text-xs text-slate-400 pt-3 leading-relaxed">
+              {{ t('GAME.CORRECT_ANSWER_DESC') }}{{ currentAttempt() }} / 5.
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <!-- Seguir button (Disabled for Daily Challenge) -->
+            <button 
+              *ngIf="currentGameMode() !== 'daily'"
+              type="button" 
+              (click)="nextLevel()"
+              class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-cyan to-brand-indigo hover:from-brand-indigo hover:to-brand-cyan text-white font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95 shadow-brand-cyan/25 cursor-pointer">
+              {{ currentGameMode() === 'random' || currentGameMode() === 'anime' ? t('GAME.NEXT_ROUND') : t('GAME.NEXT_LEVEL') }}
+            </button>
+            
+            <button 
+              type="button" 
+              (click)="backToGrid()"
+              [ngClass]="{
+                'bg-slate-800 hover:bg-slate-700 text-white': currentGameMode() !== 'daily',
+                'bg-gradient-to-r from-brand-purple to-brand-indigo hover:from-brand-indigo hover:to-brand-purple text-white shadow-brand-purple/25': currentGameMode() === 'daily'
+              }"
+              class="w-full py-3.5 px-6 font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95 cursor-pointer">
+              {{ t('GAME.BACK_HOME') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAME OVER OVERLAY: LOST -->
+      <div *ngIf="gameState() === 'lost'" class="absolute inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl shadow-red-500/5 text-center space-y-6 relative overflow-hidden">
+          <div class="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-red-500 to-orange-500"></div>
+
+          <div class="space-y-2">
+            <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest mt-2">
+              {{ t('GAME.GAME_OVER') }}
+            </h3>
+            <h4 class="text-3xs text-slate-500 font-bold uppercase tracking-wider">
+              {{ t('GAME.INCORRECT_ANSWER') }}
+            </h4>
+            <h2 class="text-3xl font-black text-white tracking-tight leading-none mt-1">
+              {{ currentLevel()!.title }}
+            </h2>
+            <!-- Solved Frame Preview -->
+            <div class="w-full rounded-lg overflow-hidden border border-slate-800 bg-slate-950 mt-4 aspect-video relative">
+              <!-- Fondo difuminado -->
+              <img [src]="resolvedFrameUrl()" alt="" class="absolute inset-0 w-full h-full object-cover blur-md opacity-30 scale-110 pointer-events-none" />
+              <!-- Imagen contenida -->
+              <img [src]="resolvedFrameUrl()" alt="Solved Movie Frame" class="relative w-full h-full object-contain z-10" />
+            </div>
+            <p class="text-xs text-slate-400 pt-3 leading-relaxed">
+              {{ t('GAME.INCORRECT_ANSWER_DESC') }}
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <button 
+              type="button" 
+              (click)="backToGrid()"
+              class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-purple to-brand-indigo hover:from-brand-indigo hover:to-brand-purple text-white font-black uppercase tracking-wider rounded-xl shadow-lg transition duration-200 active:scale-95 shadow-lg shadow-brand-purple/25 cursor-pointer">
+              {{ t('GAME.BACK_HOME') }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
   </main>
 
   <!-- Footer -->
-  <footer class="mt-auto py-6 border-t border-slate-900 text-center text-xs text-slate-600">
-    <p>© 2026 OSTPlay. Desarrollado por Ibrahim.</p>
+  <footer class="mt-auto py-6 border-t border-slate-900/50 text-center text-xs text-slate-600 relative z-10">
+    <p>{{ t('GAME.FOOTER') }}</p>
   </footer>
 
   <!-- LIGHTBOX OVERLAY -->

@@ -9,9 +9,9 @@
     <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-red-500 to-orange-500"></div>
 
     <div class="space-y-3">
-      <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest mt-2">¿Confirmar Reinicio?</h3>
+      <h3 class="text-xs font-bold text-red-500 uppercase tracking-widest mt-2">{{ t('RESET_MODAL.TITLE') }}</h3>
       <p class="text-xs text-slate-300 leading-relaxed pt-1">
-        Esta acción restablecerá por completo todos los niveles completados y las estadísticas registradas. No se puede deshacer.
+        {{ t('RESET_MODAL.DESCRIPTION') }}
       </p>
     </div>
 
@@ -20,13 +20,13 @@
         type="button" 
         (click)="cancelReset()"
         class="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-white text-2xs font-black uppercase tracking-wider rounded-xl transition duration-200 cursor-pointer">
-        Cancelar
+        {{ t('RESET_MODAL.CANCEL') }}
       </button>
       <button 
         type="button" 
         (click)="confirmReset()"
         class="flex-1 py-3 px-4 bg-red-600 hover:bg-red-500 text-white text-2xs font-black uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/20 transition duration-200 cursor-pointer">
-        Sí, reiniciar
+        {{ t('RESET_MODAL.CONFIRM') }}
       </button>
     </div>
 

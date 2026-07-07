@@ -1,13 +1,21 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { db } from './firebase.config';
 import { collection, getDocs } from 'firebase/firestore';
 import { OSTLevel, LevelStatus } from '../types/ost-level.model';
+import { ANIME_OST_LEVELS } from '../data/animeLevels';
+import { ClassicModeService } from './modes/classic-mode.service';
+import { AnimeModeService } from './modes/anime-mode.service';
+import { RandomModeService } from './modes/random-mode.service';
+import { DailyModeService } from './modes/daily-mode.service';
+import { TranslationService } from './i18n/translation.service';
 
 export interface GameStats {
   moviesPlayed: number;
   moviesWon: number;
   seriesPlayed: number;
   seriesWon: number;
+  animePlayed: number;
+  animeWon: number;
   streak: number;
   maxStreak: number;
   distribution: number[]; // 5 indices for attempts 1-5
@@ -17,24 +25,40 @@ export interface GameStats {
   providedIn: 'root'
 })
 export class GameStateService {
-  // All levels loaded from Firestore
-  allLevels = signal<OSTLevel[]>([]);
+  // Mode-specific services
+  readonly classicModeService = inject(ClassicModeService);
+  readonly animeModeService = inject(AnimeModeService);
+  readonly randomModeService = inject(RandomModeService);
+  readonly dailyModeService = inject(DailyModeService);
+  readonly translationService = inject(TranslationService);
 
-  // Current active category
-  currentCategory = signal<'movies' | 'series'>('movies');
+  // All levels loaded from Firestore + local fallbacks
+  allLevels = signal<OSTLevel[]>([]);
+  displayTitles = signal<string[]>([]);
+  translatedLevel = signal<OSTLevel | null>(null);
+
+  // Current active game mode
+  currentGameMode = signal<'movies' | 'series' | 'anime' | 'random' | 'daily'>('movies');
+
+  // Current active category (movies, series, anime)
+  currentCategory = signal<'movies' | 'series' | 'anime'>('movies');
 
   // Loading state for the DB fetch
   isLoadingLevels = signal<boolean>(true);
 
   // Filtered levels based on current category
   levels = computed<OSTLevel[]>(() => {
-    return this.allLevels().filter(l => l.category === this.currentCategory());
+    const category = this.currentCategory();
+    if (category === 'anime') {
+      return this.allLevels().filter(l => l.isAnime === true);
+    }
+    return this.allLevels().filter(l => l.category === category && l.isAnime !== true);
   });
 
-  // TMDb API Key (Paste your API key here for dynamic fallback frames, though n8n provides them)
+  // TMDb API Key (for dynamic fallback frames)
   tmdbApiKey = signal<string>('');
 
-  // Resolved dynamic URLs resolved at runtime
+  // Resolved dynamic URLs
   resolvedAudioUrl = signal<string>('');
   resolvedFrameUrl = signal<string>('');
   isLoadingMedia = signal<boolean>(false);
@@ -42,8 +66,11 @@ export class GameStateService {
   // Dictionary to store the status of each level (levelId -> status)
   levelStatuses = signal<Record<string, LevelStatus>>({});
 
-  // Active level selection (null represents the grid dashboard)
+  // Active level selection for grid modes (movies, series, anime)
   currentLevelIndex = signal<number | null>(null);
+
+  // Active custom level for non-grid modes (random, daily)
+  activeCustomLevel = signal<OSTLevel | null>(null);
 
   // Active navigation view
   currentView = signal<'modes' | 'grid' | 'game'>('modes');
@@ -59,6 +86,8 @@ export class GameStateService {
     moviesWon: 0,
     seriesPlayed: 0,
     seriesWon: 0,
+    animePlayed: 0,
+    animeWon: 0,
     streak: 0,
     maxStreak: 0,
     distribution: [0, 0, 0, 0, 0]
@@ -75,13 +104,21 @@ export class GameStateService {
 
   // Computed / Derived State
   currentLevel = computed<OSTLevel | null>(() => {
+    const mode = this.currentGameMode();
+    if (mode === 'random' || mode === 'daily') {
+      return this.activeCustomLevel();
+    }
     const idx = this.currentLevelIndex();
     const currentList = this.levels();
     return idx !== null && idx >= 0 && idx < currentList.length ? currentList[idx] : null;
   });
 
   allTitles = computed<string[]>(() => {
-    return [...this.levels().map(l => l.title)].sort((a, b) => a.localeCompare(b));
+    const mode = this.currentGameMode();
+    if (mode === 'random' || mode === 'daily') {
+      return [...new Set(this.allLevels().map(l => l.title))].sort((a, b) => a.localeCompare(b));
+    }
+    return [...new Set(this.levels().map(l => l.title))].sort((a, b) => a.localeCompare(b));
   });
 
   completedPercentage = computed<number>(() => {
@@ -94,13 +131,52 @@ export class GameStateService {
   constructor() {
     this.loadLevelsFromFirestore();
     this.loadLocalStats();
+
+    // Effect to dynamically translate active level's title and plot overview
+    effect(async () => {
+      const level = this.currentLevel();
+      const lang = this.translationService.currentLang();
+      if (!level) {
+        this.translatedLevel.set(null);
+        return;
+      }
+      if (lang === 'en') {
+        const tTitle = await this.translationService.translateEsToEn(level.title);
+        const tPlot = await this.translationService.translateEsToEn(level.hints.plot);
+        this.translatedLevel.set({
+          ...level,
+          title: tTitle,
+          hints: {
+            ...level.hints,
+            plot: tPlot
+          }
+        });
+      } else {
+        this.translatedLevel.set(level);
+      }
+    }, { allowSignalWrites: true });
+
+    // Effect to translate all titles for autocompletion dropdown in real-time
+    effect(async () => {
+      const rawTitles = this.allTitles();
+      const lang = this.translationService.currentLang();
+      if (lang === 'en') {
+        const translated = await this.translationService.getTranslatedTitles(rawTitles);
+        this.displayTitles.set(translated);
+      } else {
+        this.displayTitles.set(rawTitles);
+      }
+    }, { allowSignalWrites: true });
   }
 
   private loadLocalStats() {
     const savedStats = localStorage.getItem('ostplay_stats');
     if (savedStats) {
       try {
-        this.stats.set(JSON.parse(savedStats));
+        const parsed = JSON.parse(savedStats);
+        if (parsed.animePlayed === undefined) parsed.animePlayed = 0;
+        if (parsed.animeWon === undefined) parsed.animeWon = 0;
+        this.stats.set(parsed);
       } catch (e) {
         console.error('Error parseando estadísticas:', e);
       }
@@ -125,6 +201,7 @@ export class GameStateService {
         fetchedLevels.push({
           levelId: data['levelId'] || doc.id,
           category: data['category'] || 'movies',
+          isAnime: data['isAnime'] || false,
           title: data['title'] !== undefined && data['title'] !== null ? String(data['title']) : '',
           audioUrl: data['audioUrl'] || '',
           youtubeId: data['youtubeId'] || '',
@@ -139,8 +216,13 @@ export class GameStateService {
         });
       });
 
-      // Mezclar los niveles usando un hash determinista del ID para que el orden sea
-      // aleatorio y no queden agrupados por nombre, pero siga siendo consistente al recargar.
+      // Si no hay ningún nivel de anime cargado en Firestore, inyectamos los locales
+      const hasAnime = fetchedLevels.some(lvl => lvl.isAnime === true);
+      if (!hasAnime) {
+        fetchedLevels.push(...ANIME_OST_LEVELS);
+      }
+
+      // Mezclar los niveles usando un hash determinista del ID para orden consistente
       const getLevelHash = (id: string) => {
         let hash = 0;
         for (let i = 0; i < id.length; i++) {
@@ -154,13 +236,15 @@ export class GameStateService {
       this.initializeStatuses(fetchedLevels);
     } catch (error) {
       console.error('Error cargando niveles de Firestore:', error);
+      // Fallback a los niveles locales si hay error de conexión
+      this.allLevels.set(ANIME_OST_LEVELS);
+      this.initializeStatuses(ANIME_OST_LEVELS);
     } finally {
       this.isLoadingLevels.set(false);
     }
   }
 
   private initializeStatuses(fetchedLevels: OSTLevel[]) {
-    // Intentar recuperar el estado guardado del almacenamiento local
     const saved = localStorage.getItem('ostplay_statuses');
     let localStatuses: Record<string, LevelStatus> = {};
     if (saved) {
@@ -179,17 +263,28 @@ export class GameStateService {
   }
 
   /**
-   * Cambia la categoría activa y redirige a la cuadrícula de niveles.
+   * Cambia el modo de juego activo y la vista.
    */
-  setCategory(category: 'movies' | 'series') {
-    this.currentCategory.set(category);
+  setGameMode(mode: 'movies' | 'series' | 'anime' | 'random' | 'daily') {
+    this.currentGameMode.set(mode);
     this.currentLevelIndex.set(null);
-    this.currentView.set('grid');
+    this.activeCustomLevel.set(null);
+
+    if (mode === 'movies' || mode === 'series' || mode === 'anime') {
+      this.currentCategory.set(mode);
+      this.currentView.set('grid');
+    } else if (mode === 'random') {
+      this.currentView.set('game');
+      this.startRandomLevel();
+    } else if (mode === 'daily') {
+      this.currentView.set('game');
+      this.startDailyLevel();
+    }
     window.scrollTo(0, 0);
   }
 
   /**
-   * Navega a un nivel específico e inicia la resolución de audios/imágenes vía API.
+   * Navega a un nivel clásico o de anime específico.
    */
   async selectLevel(index: number) {
     const currentList = this.levels();
@@ -211,24 +306,55 @@ export class GameStateService {
 
       this.currentView.set('game');
       window.scrollTo(0, 0);
-
-      // Resolve audio and frame URLs from APIs
       await this.resolveLevelMedia(level);
     }
   }
 
   /**
-   * Obtiene la pista de iTunes (gratis, sin key) y usa el fotograma precargado en Firestore.
+   * Inicia una ronda en el Modo Aleatorio.
+   */
+  async startRandomLevel() {
+    const level = this.randomModeService.getRandomLevel(this.allLevels());
+    if (level) {
+      this.activeCustomLevel.set(level);
+      this.currentAttempt.set(1);
+      this.guessHistory.set([]);
+      this.gameState.set('playing');
+      await this.resolveLevelMedia(level);
+    }
+  }
+
+  /**
+   * Inicia el Reto Diario de hoy.
+   */
+  async startDailyLevel() {
+    this.dailyModeService.checkTodayState();
+    const level = this.dailyModeService.getDailyLevel(this.allLevels());
+    if (level) {
+      this.activeCustomLevel.set(level);
+      const saved = this.dailyModeService.getSavedGameplayState();
+      if (saved) {
+        this.currentAttempt.set(saved.attempt);
+        this.guessHistory.set(saved.guessHistory);
+        this.gameState.set(saved.state);
+      } else {
+        this.currentAttempt.set(1);
+        this.guessHistory.set([]);
+        this.gameState.set('playing');
+      }
+      await this.resolveLevelMedia(level);
+    }
+  }
+
+  /**
+   * Resuelve el contenido de audio y vídeo de un nivel específico.
    */
   private async resolveLevelMedia(level: OSTLevel) {
     this.isLoadingMedia.set(true);
     this.resolvedAudioUrl.set('');
-
-    // El fotograma ya viene resuelto por n8n en el campo frameUrl
     this.resolvedFrameUrl.set(level.hints.frameUrl || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=780');
 
     try {
-      // 1. Resolve YouTube Video ID (prioritize level.youtubeId, then extract from level.audioUrl)
       if (level.youtubeId) {
         this.resolvedAudioUrl.set(level.youtubeId);
       } else if (level.audioUrl && (level.audioUrl.includes('youtube.com') || level.audioUrl.includes('youtu.be'))) {
@@ -240,7 +366,6 @@ export class GameStateService {
         this.resolvedAudioUrl.set(level.audioUrl || '');
       }
 
-      // 2. Si no hay frameUrl resuelto por n8n, lo buscamos en TMDb en vivo (si se configuró API Key)
       if (!level.hints.frameUrl) {
         const key = this.tmdbApiKey().trim();
         if (key) {
@@ -254,7 +379,6 @@ export class GameStateService {
           }
         }
       }
-
     } catch (err) {
       console.error('Error resolviendo APIs multimedia de nivel:', err);
       this.resolvedAudioUrl.set(level.audioUrl || '');
@@ -264,19 +388,22 @@ export class GameStateService {
   }
 
   /**
-   * Regresa a la cuadrícula de selección de niveles.
+   * Regresa a la vista anterior (cuadrícula o selector de modos).
    */
   backToGrid() {
-    this.currentLevelIndex.set(null);
-    this.currentView.set('grid');
-    window.scrollTo(0, 0);
+    const mode = this.currentGameMode();
+    if (mode === 'random' || mode === 'daily') {
+      this.goToModes();
+    } else {
+      this.currentLevelIndex.set(null);
+      this.currentView.set('grid');
+      window.scrollTo(0, 0);
+    }
   }
 
-  /**
-   * Regresa al selector de modos principal.
-   */
   goToModes() {
     this.currentLevelIndex.set(null);
+    this.activeCustomLevel.set(null);
     this.currentView.set('modes');
     window.scrollTo(0, 0);
   }
@@ -284,7 +411,7 @@ export class GameStateService {
   normalizeText(text: string): string {
     return text
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Quita acentos
+      .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase()
       .trim()
       .replace(/\s+/g, ' ');
@@ -294,17 +421,16 @@ export class GameStateService {
     const level = this.currentLevel();
     if (!level || this.gameState() !== 'playing') return false;
 
-    const normalizedGuess = this.normalizeText(guess);
-
+    // Map English title back to original Spanish title if matched in the map
+    const originalGuess = this.translationService.englishToSpanishMap.get(guess.toLowerCase().trim()) || guess;
+    const normalizedGuess = this.normalizeText(originalGuess);
     const isCorrect = level.correctAnswers.some(
       ans => this.normalizeText(ans) === normalizedGuess
     );
 
     if (isCorrect) {
       this.gameState.set('won');
-      this.updateLevelStatus(level.levelId, 'won');
-      this.updateStats(true, this.currentAttempt(), this.currentCategory());
-      this.saveLevelGameplayState(level.levelId, this.currentAttempt(), this.guessHistory(), 'won');
+      this.handleRoundComplete(true);
       return true;
     } else {
       const updatedHistory = [...this.guessHistory(), guess.trim()];
@@ -313,43 +439,91 @@ export class GameStateService {
       const nextAttempt = this.currentAttempt() + 1;
       if (nextAttempt <= 5) {
         this.currentAttempt.set(nextAttempt);
-        this.saveLevelGameplayState(level.levelId, nextAttempt, updatedHistory, 'playing');
+        this.saveActiveGameplayState(nextAttempt, updatedHistory, 'playing');
       } else {
         this.gameState.set('lost');
-        this.updateLevelStatus(level.levelId, 'lost');
-        this.updateStats(false, 5, this.currentCategory());
-        this.saveLevelGameplayState(level.levelId, 5, updatedHistory, 'lost');
+        this.handleRoundComplete(false);
       }
       return false;
     }
   }
 
-  private updateStats(isWin: boolean, attempt: number, category: 'movies' | 'series') {
-    this.stats.update(curr => {
-      const updated = { ...curr };
-      if (category === 'movies') {
-        updated.moviesPlayed += 1;
-        if (isWin) updated.moviesWon += 1;
-      } else {
-        updated.seriesPlayed += 1;
-        if (isWin) updated.seriesWon += 1;
-      }
+  private handleRoundComplete(isWin: boolean) {
+    const level = this.currentLevel();
+    if (!level) return;
 
-      if (isWin) {
-        updated.streak += 1;
-        if (updated.streak > updated.maxStreak) {
-          updated.maxStreak = updated.streak;
+    const mode = this.currentGameMode();
+    const attempt = this.currentAttempt();
+    const history = this.guessHistory();
+    const status = isWin ? 'won' : 'lost';
+
+    if (mode === 'daily') {
+      this.dailyModeService.saveDailyProgress(attempt, history, status);
+      this.stats.update(curr => {
+        return this.dailyModeService.onDailyCompleted(curr, isWin, attempt, level.category || 'movies');
+      });
+    } else if (mode === 'random') {
+      this.stats.update(curr => {
+        if (isWin) {
+          return this.randomModeService.onLevelWon(curr);
+        } else {
+          return this.randomModeService.onLevelLost(curr);
         }
-        const idx = Math.min(Math.max(0, attempt - 1), 4);
-        updated.distribution = [...updated.distribution];
-        updated.distribution[idx] += 1;
-      } else {
-        updated.streak = 0;
-      }
+      });
+    } else if (mode === 'anime') {
+      this.updateLevelStatus(level.levelId, status);
+      this.saveLevelGameplayState(level.levelId, attempt, history, status);
+      this.stats.update(curr => {
+        if (isWin) {
+          return this.animeModeService.onLevelWon(curr);
+        } else {
+          return this.animeModeService.onLevelLost(curr);
+        }
+      });
+    } else {
+      // películas o series clásicos
+      this.updateLevelStatus(level.levelId, status);
+      this.saveLevelGameplayState(level.levelId, attempt, history, status);
+      this.stats.update(curr => {
+        return this.classicModeService.updateClassicStats(curr, mode, isWin, attempt);
+      });
+    }
+  }
 
-      localStorage.setItem('ostplay_stats', JSON.stringify(updated));
-      return updated;
-    });
+  private saveActiveGameplayState(attempt: number, guessHistory: string[], state: 'playing' | 'won' | 'lost') {
+    const level = this.currentLevel();
+    if (!level) return;
+
+    const mode = this.currentGameMode();
+    if (mode === 'daily') {
+      this.dailyModeService.saveDailyProgress(attempt, guessHistory, state);
+    } else if (mode === 'random') {
+      // El modo aleatorio no necesita persistirse tras recarga para rondas intermedias
+    } else {
+      this.saveLevelGameplayState(level.levelId, attempt, guessHistory, state);
+    }
+  }
+
+  /**
+   * Carga el siguiente nivel disponible o ronda según el modo.
+   */
+  nextLevel() {
+    const mode = this.currentGameMode();
+    if (mode === 'random') {
+      this.startRandomLevel();
+    } else if (mode === 'daily') {
+      // El Daily Challenge no tiene nivel siguiente
+    } else {
+      const currentIdx = this.currentLevelIndex();
+      if (currentIdx !== null) {
+        const nextIdx = currentIdx + 1;
+        if (nextIdx < this.levels().length) {
+          this.selectLevel(nextIdx);
+        } else {
+          this.backToGrid();
+        }
+      }
+    }
   }
 
   toggleMute() {
@@ -374,7 +548,6 @@ export class GameStateService {
         ...current,
         [levelId]: status
       };
-      // Persistir en localStorage
       localStorage.setItem('ostplay_statuses', JSON.stringify(updated));
       return updated;
     });
@@ -389,11 +562,17 @@ export class GameStateService {
     localStorage.removeItem('ostplay_statuses');
     localStorage.removeItem('ostplay_gameplay_states');
 
+    this.animeModeService.resetProgress();
+    this.randomModeService.resetProgress();
+    this.dailyModeService.resetProgress();
+
     const initialStats: GameStats = {
       moviesPlayed: 0,
       moviesWon: 0,
       seriesPlayed: 0,
       seriesWon: 0,
+      animePlayed: 0,
+      animeWon: 0,
       streak: 0,
       maxStreak: 0,
       distribution: [0, 0, 0, 0, 0]
@@ -402,6 +581,8 @@ export class GameStateService {
     localStorage.removeItem('ostplay_stats');
 
     this.currentLevelIndex.set(null);
+    this.activeCustomLevel.set(null);
+    this.currentGameMode.set('movies');
     this.currentView.set('modes');
     window.scrollTo(0, 0);
   }

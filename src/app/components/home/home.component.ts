@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from '../../core/game-state.service';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-home',
@@ -11,8 +12,13 @@ import { GameStateService } from '../../core/game-state.service';
 })
 export class HomeComponent {
   readonly gameStateService = inject(GameStateService);
+  readonly translationService = inject(TranslationService);
 
-  setCategory(category: 'movies' | 'series') {
-    this.gameStateService.setCategory(category);
+  t(key: string): string {
+    return this.translationService.t(key);
+  }
+
+  setGameMode(mode: 'movies' | 'series' | 'anime' | 'random' | 'daily') {
+    this.gameStateService.setGameMode(mode);
   }
 }

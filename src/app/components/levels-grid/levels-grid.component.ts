@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from '../../core/game-state.service';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-levels-grid',
@@ -11,6 +12,11 @@ import { GameStateService } from '../../core/game-state.service';
 })
 export class LevelsGridComponent {
   readonly gameStateService = inject(GameStateService);
+  readonly translationService = inject(TranslationService);
+
+  t(key: string): string {
+    return this.translationService.t(key);
+  }
 
   readonly levels = this.gameStateService.levels;
   readonly levelStatuses = this.gameStateService.levelStatuses;

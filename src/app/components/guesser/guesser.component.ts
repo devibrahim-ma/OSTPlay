@@ -1,6 +1,7 @@
-import { Component, EventEmitter, Input, Output, HostListener, ElementRef } from '@angular/core';
+import { Component, EventEmitter, Input, Output, HostListener, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-guesser',
@@ -17,6 +18,12 @@ export class GuesserComponent {
   filteredOptions: string[] = [];
   showSuggestions = false;
   activeSuggestionIndex = -1;
+
+  readonly translationService = inject(TranslationService);
+
+  t(key: string): string {
+    return this.translationService.t(key);
+  }
 
   constructor(private elementRef: ElementRef) {}
 

@@ -8,6 +8,7 @@ export interface MovieHints {
 export interface OSTLevel {
   levelId: string;
   category?: 'movies' | 'series';
+  isAnime?: boolean;
   title: string;          // Correct name of the movie
   audioUrl: string;       // URL to public mp3
   youtubeId?: string;     // Optional YouTube video ID

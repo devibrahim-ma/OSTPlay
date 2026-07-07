@@ -1,13 +1,16 @@
 <main class="flex-grow max-w-5xl w-full mx-auto p-6 space-y-8 flex flex-col justify-center">
   <div class="text-center space-y-3 max-w-xl mx-auto py-6">
-    <h2 class="text-3xl font-black tracking-tight text-white mt-3 bg-gradient-to-r from-white via-slate-100 to-brand-cyan bg-clip-text text-transparent uppercase tracking-wider">Modos de Juego</h2>
+    <h2 class="text-3xl font-black tracking-tight text-white mt-3 bg-gradient-to-r from-white via-slate-100 to-brand-cyan bg-clip-text text-transparent uppercase tracking-wider">
+      {{ t('HOME.SELECT_MODE') }}
+    </h2>
   </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
     <!-- Películas Card -->
     <button 
       type="button" 
-      (click)="setCategory('movies')"
+      (click)="setGameMode('movies')"
+      style="--glow-color: 162, 25, 199;"
       class="clapper-card h-[290px] text-left cursor-pointer group">
       <div class="clapper-bar brand-purple"></div>
       <div class="clapper-body">
@@ -16,15 +19,18 @@
             <!-- Imagen Fija de Películas -->
             <div class="relative w-full h-24 rounded-lg overflow-hidden border border-obsidian-900 bg-obsidian-950">
               <img src="assets/peliculass.jpeg" alt="Películas" class="w-full h-full object-cover" />
-             
             </div>
-            <h3 class="text-lg font-black text-white group-hover:text-brand-purple transition-colors duration-200">Películas</h3>
+            <h3 class="text-lg font-black text-white group-hover:text-brand-purple transition-colors duration-200">
+              {{ t('NAVBAR.MOVIES') }}
+            </h3>
             <p class="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
-              Las bandas sonoras más icónicas de la historia del cine clásico y moderno.
+              {{ t('HOME.MOVIES_DESC') }}
             </p>
           </div>
           <div class="flex justify-between items-center mt-2 w-full">
-            <span class="text-3xs font-black uppercase tracking-widest text-brand-purple">Jugar Ahora</span>
+            <span class="text-3xs font-black uppercase tracking-widest text-brand-purple">
+              {{ t('HOME.PLAY_MOVIES') }}
+            </span>
             <span class="w-7 h-7 rounded-full bg-brand-purple/10 border border-brand-purple/20 flex items-center justify-center text-brand-purple group-hover:bg-brand-purple group-hover:text-white transition duration-300">
               ➔
             </span>
@@ -33,10 +39,11 @@
       </div>
     </button>
 
-    <!-- Series de TV Card -->
+    <!-- TV Series Card -->
     <button 
       type="button" 
-      (click)="setCategory('series')"
+      (click)="setGameMode('series')"
+      style="--glow-color: 20, 202, 216;"
       class="clapper-card h-[290px] text-left cursor-pointer group">
       <div class="clapper-bar brand-cyan"></div>
       <div class="clapper-body">
@@ -46,13 +53,17 @@
             <div class="relative w-full h-24 rounded-lg overflow-hidden border border-obsidian-900 bg-obsidian-950">
               <img src="assets/series.jpg" alt="Series de TV" class="w-full h-full object-cover" />
             </div>
-            <h3 class="text-lg font-black text-white group-hover:text-brand-cyan transition-colors duration-200">Series de TV</h3>
+            <h3 class="text-lg font-black text-white group-hover:text-brand-cyan transition-colors duration-200">
+              {{ t('NAVBAR.SERIES') }}
+            </h3>
             <p class="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
-              Temas de apertura y música incidental de tus series y shows de TV preferidos.
+              {{ t('HOME.SERIES_DESC') }}
             </p>
           </div>
           <div class="flex justify-between items-center mt-2 w-full">
-            <span class="text-3xs font-black uppercase tracking-widest text-brand-cyan">Jugar Ahora</span>
+            <span class="text-3xs font-black uppercase tracking-widest text-brand-cyan">
+              {{ t('HOME.PLAY_SERIES') }}
+            </span>
             <span class="w-7 h-7 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan group-hover:bg-brand-cyan group-hover:text-white transition duration-300">
               ➔
             </span>
@@ -61,79 +72,103 @@
       </div>
     </button>
 
-    <!-- Daily Mode Card (Coming Soon) -->
-    <div class="clapper-card h-64 opacity-75 relative overflow-hidden group">
-      <div class="absolute top-4 right-4 bg-brand-indigo/20 border border-brand-indigo/30 text-brand-indigo px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider z-20">
-        Próximamente
-      </div>
-      <div class="clapper-bar brand-indigo"></div>
-      <div class="clapper-body">
-        <div class="clapper-card-content justify-between p-6">
-          <div class="space-y-2 flex-grow">
-            <span class="text-3xl">📅</span>
-            <h3 class="text-xl font-black text-slate-300 mt-2">Daily Challenge</h3>
-            <p class="text-xs text-slate-500 leading-relaxed">
-              Una banda sonora al día idéntica para todos los jugadores del mundo. ¿Podrás adivinarla?
-            </p>
-          </div>
-          <div class="flex justify-between items-center mt-4 opacity-50">
-            <span class="text-3xs font-black uppercase tracking-widest text-slate-500">Bloqueado</span>
-            <span class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
-              🔒
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Random Mode Card (Coming Soon) -->
-    <div class="clapper-card h-64 opacity-75 relative overflow-hidden group">
-      <div class="absolute top-4 right-4 bg-yellow-500/15 border border-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider z-20">
-        Próximamente
-      </div>
-      <div class="clapper-bar brand-yellow"></div>
-      <div class="clapper-body">
-        <div class="clapper-card-content justify-between p-6">
-          <div class="space-y-2 flex-grow">
-            <span class="text-3xl">🎲</span>
-            <h3 class="text-xl font-black text-slate-300 mt-2">Modo Aleatorio</h3>
-            <p class="text-xs text-slate-500 leading-relaxed">
-              Mezcla infinita de películas y series con contador de racha de aciertos en tiempo real.
-            </p>
-          </div>
-          <div class="flex justify-between items-center mt-4 opacity-50">
-            <span class="text-3xs font-black uppercase tracking-widest text-slate-500">Bloqueado</span>
-            <span class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
-              🔒
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Anime Card (Coming Soon) -->
-    <div class="clapper-card h-64 opacity-75 relative overflow-hidden group">
-      <div class="absolute top-4 right-4 bg-orange-500/15 border border-orange-500/20 text-orange-500 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider z-20">
-        Próximamente
-      </div>
+    <!-- Anime Card -->
+    <button 
+      type="button" 
+      (click)="setGameMode('anime')"
+      style="--glow-color: 249, 115, 22;"
+      class="clapper-card h-[290px] text-left cursor-pointer group">
       <div class="clapper-bar brand-orange"></div>
       <div class="clapper-body">
-        <div class="clapper-card-content justify-between p-6">
-          <div class="space-y-2 flex-grow">
-            <span class="text-3xl">🌸</span>
-            <h3 class="text-xl font-black text-slate-300 mt-2">Modo Anime</h3>
-            <p class="text-xs text-slate-500 leading-relaxed">
-              Openings, endings y temas incidentales legendarios del mundo de la animación japonesa.
+        <div class="clapper-card-content justify-between p-5">
+          <div class="space-y-2 w-full">
+            <!-- Imagen Fija de Anime -->
+            <div class="relative w-full h-24 rounded-lg overflow-hidden border border-obsidian-900 bg-obsidian-950">
+              <img src="assets/anime.png" alt="Modo Anime" class="w-full h-full object-cover" />
+            </div>
+            <h3 class="text-lg font-black text-white group-hover:text-brand-orange transition-colors duration-200">
+              {{ t('NAVBAR.ANIME') }}
+            </h3>
+            <p class="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
+              {{ t('HOME.ANIME_DESC') }}
             </p>
           </div>
-          <div class="flex justify-between items-center mt-4 opacity-50">
-            <span class="text-3xs font-black uppercase tracking-widest text-slate-500">Bloqueado</span>
-            <span class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
-              🔒
+          <div class="flex justify-between items-center mt-2 w-full">
+            <span class="text-3xs font-black uppercase tracking-widest text-brand-orange">
+              {{ t('HOME.PLAY_ANIME') }}
+            </span>
+            <span class="w-7 h-7 rounded-full bg-brand-orange/10 border border-brand-orange/20 flex items-center justify-center text-brand-orange group-hover:bg-brand-orange group-hover:text-white transition duration-300">
+              ➔
             </span>
           </div>
         </div>
       </div>
-    </div>
+    </button>
+
+    <!-- Daily Challenge Card -->
+    <button 
+      type="button" 
+      (click)="setGameMode('daily')"
+      style="--glow-color: 98, 82, 206;"
+      class="clapper-card h-[290px] text-left cursor-pointer group">
+      <div class="clapper-bar brand-indigo"></div>
+      <div class="clapper-body">
+        <div class="clapper-card-content justify-between p-5">
+          <div class="space-y-2 w-full">
+            <!-- Imagen Fija de Daily Challenge -->
+            <div class="relative w-full h-24 rounded-lg overflow-hidden border border-obsidian-900 bg-obsidian-950">
+              <img src="../../../assets/daily.avif" alt="Daily Challenge" class="w-full h-full object-cover" />
+            </div>
+            <h3 class="text-lg font-black text-white group-hover:text-brand-indigo transition-colors duration-200">
+              {{ t('NAVBAR.DAILY') }}
+            </h3>
+            <p class="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
+              {{ t('HOME.DAILY_DESC') }}
+            </p>
+          </div>
+          <div class="flex justify-between items-center mt-2 w-full">
+            <span class="text-3xs font-black uppercase tracking-widest text-brand-indigo">
+              {{ t('HOME.PLAY_DAILY') }}
+            </span>
+            <span class="w-7 h-7 rounded-full bg-brand-indigo/10 border border-brand-indigo/20 flex items-center justify-center text-brand-indigo group-hover:bg-brand-indigo group-hover:text-white transition duration-300">
+              ➔
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
+
+    <!-- Random Mode Card -->
+    <button 
+      type="button" 
+      (click)="setGameMode('random')"
+      style="--glow-color: 234, 179, 8;"
+      class="clapper-card h-[290px] text-left cursor-pointer group">
+      <div class="clapper-bar brand-yellow"></div>
+      <div class="clapper-body">
+        <div class="clapper-card-content justify-between p-5">
+          <div class="space-y-2 w-full">
+            <!-- Imagen Fija de Modo Aleatorio -->
+            <div class="relative w-full h-24 rounded-lg overflow-hidden border border-obsidian-900 bg-obsidian-950">
+              <img src="../../../assets/random.jpg" alt="Modo Aleatorio" class="w-full h-full object-cover" />
+            </div>
+            <h3 class="text-lg font-black text-white group-hover:text-brand-yellow transition-colors duration-200">
+              {{ t('NAVBAR.RANDOM') }}
+            </h3>
+            <p class="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
+              {{ t('HOME.RANDOM_DESC') }}
+            </p>
+          </div>
+          <div class="flex justify-between items-center mt-2 w-full">
+            <span class="text-3xs font-black uppercase tracking-widest text-brand-yellow">
+              {{ t('HOME.PLAY_RANDOM') }}
+            </span>
+            <span class="w-7 h-7 rounded-full bg-brand-yellow/10 border border-brand-yellow/20 flex items-center justify-center text-brand-yellow group-hover:bg-brand-yellow group-hover:text-white transition duration-300">
+              ➔
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
   </div>
 </main>

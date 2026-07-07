@@ -1,12 +1,13 @@
 <main class="flex-grow max-w-6xl w-full mx-auto p-6 space-y-8">
   <div class="text-center space-y-2 max-w-xl mx-auto py-6">
     <h2 class="text-3xl font-black tracking-tight text-white mt-3 bg-gradient-to-r from-white via-slate-100 to-brand-cyan bg-clip-text text-transparent">
-      Selecciona una Banda Sonora
+      {{ t('GRID.SELECT_SOUNDTRACK') }}
     </h2>
     <p class="text-xs text-slate-400 leading-relaxed">
-      Elige cualquier nivel disponible para comenzar. Acierta antes de agotar tus 5 intentos. Los niveles acertados se marcarán en verde y los fallidos en rojo.
+      {{ t('GRID.SELECT_SOUNDTRACK_DESC') }}
     </p>
   </div>
+  
   <!-- Pagination Controls -->
   <div *ngIf="!isLoadingLevels() && totalPages() > 1" class="flex flex-wrap justify-center items-center gap-2.5 pb-2 select-none">
     <button 
@@ -26,8 +27,8 @@
   <div *ngIf="isLoadingLevels()" class="flex flex-col items-center justify-center py-20 gap-4 text-center">
     <span class="w-10 h-10 rounded-full border-4 border-brand-purple/10 border-t-brand-cyan animate-spin"></span>
     <div>
-      <span class="block text-xs font-bold text-brand-cyan uppercase tracking-widest">Cargando Cartelera</span>
-      <span class="text-3xs text-slate-500 mt-1 block">Conectando a Firestore para traer los niveles...</span>
+      <span class="block text-xs font-bold text-brand-cyan uppercase tracking-widest">{{ t('GRID.LOADING_BILLBOARD') }}</span>
+      <span class="text-3xs text-slate-500 mt-1 block">{{ t('GRID.CONNECTING_FIRESTORE') }}</span>
     </div>
   </div>
 
@@ -71,24 +72,24 @@
           </div>
           
           <div class="w-full border-b border-slate-700 pb-0.5 mb-1.5 flex justify-between items-center">
-            <span class="text-slate-400">Nivel:</span>
+            <span class="text-slate-400">{{ t('GRID.LEVEL_LABEL') }}</span>
             <span class="font-bold text-white text-xs">{{ (idx + 1 + currentPageChecked() * pageSize) < 10 ? '0' : '' }}{{ idx + 1 + currentPageChecked() * pageSize }}</span>
           </div>
 
           <div class="w-full border-b border-slate-700 pb-0.5 mb-1.5 flex justify-between items-center">
-            <span class="text-slate-400">Estado:</span>
+            <span class="text-slate-400">{{ t('GRID.STATUS_LABEL') }}</span>
             <span class="font-bold uppercase tracking-wider text-[8px]" 
                   [ngClass]="{
                     'text-emerald-400': levelStatuses()[level.levelId] === 'won',
                     'text-rose-500': levelStatuses()[level.levelId] === 'lost',
                     'text-slate-500': levelStatuses()[level.levelId] === 'neutral'
                   }">
-              {{ levelStatuses()[level.levelId] === 'won' ? 'RESUELTO' : (levelStatuses()[level.levelId] === 'lost' ? 'FALLADO' : 'POR JUGAR') }}
+              {{ levelStatuses()[level.levelId] === 'won' ? t('GRID.WON') : (levelStatuses()[level.levelId] === 'lost' ? t('GRID.LOST') : t('GRID.NEUTRAL')) }}
             </span>
           </div>
 
           <div class="w-full border-b border-slate-700 pb-0.5 flex justify-between items-center truncate">
-            <span class="text-slate-400">Titulo:</span>
+            <span class="text-slate-400">{{ t('GRID.TITLE_LABEL') }}</span>
             <span class="font-bold text-brand-cyan truncate max-w-[95px] text-right text-[8px]">
               {{ levelStatuses()[level.levelId] === 'won' ? level.title : (levelStatuses()[level.levelId] === 'lost' ? level.title : '???') }}
             </span>

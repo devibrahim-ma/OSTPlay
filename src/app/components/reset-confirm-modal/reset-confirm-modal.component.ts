@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from '../../core/game-state.service';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-reset-confirm-modal',
@@ -11,6 +12,11 @@ import { GameStateService } from '../../core/game-state.service';
 })
 export class ResetConfirmModalComponent {
   readonly gameStateService = inject(GameStateService);
+  readonly translationService = inject(TranslationService);
+
+  t(key: string): string {
+    return this.translationService.t(key);
+  }
 
   readonly showResetConfirm = this.gameStateService.showResetConfirm;
 

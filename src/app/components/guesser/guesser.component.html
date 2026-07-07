@@ -4,7 +4,7 @@
   <form (ngSubmit)="onSubmit()" class="relative z-10 space-y-4">
     <div class="relative">
       <label for="guess-input" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-        Escribe tu respuesta
+        {{ t('GAME.WRITE_RESPONSE') }}
       </label>
       
       <div class="relative">
@@ -17,7 +17,7 @@
           (input)="onInputChange()"
           (focus)="onInputFocus()"
           (keydown)="onKeyDown($event)"
-          placeholder="¿Qué película o serie es? Escribe para buscar..."
+          [placeholder]="t('GAME.GUESS_PLACEHOLDER')"
           autocomplete="off"
           class="w-full bg-obsidian-950 border border-obsidian-800 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500/25 transition duration-200" />
         
@@ -45,7 +45,7 @@
       type="submit"
       [disabled]="!guessValue.trim()"
       class="w-full py-3 px-6 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 disabled:from-obsidian-800 disabled:to-obsidian-800 disabled:text-slate-600 text-slate-950 font-extrabold rounded-xl shadow-lg hover:shadow-teal-500/10 transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 group">
-      <span>Enviar Intento</span>
+      <span>{{ t('GAME.SUBMIT') }}</span>
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
       </svg>

@@ -1,6 +1,7 @@
 import { Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, signal, computed, inject, effect, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from '../../core/game-state.service';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 declare var YT: any;
 
@@ -19,7 +20,12 @@ export class PlayerComponent implements OnInit, OnChanges, OnDestroy {
   private readonly gameStateService = inject(GameStateService);
   private readonly ngZone = inject(NgZone);
   private readonly cdr = inject(ChangeDetectorRef);
+  readonly translationService = inject(TranslationService);
   readonly isMuted = this.gameStateService.isMuted;
+
+  t(key: string): string {
+    return this.translationService.t(key);
+  }
 
   useYoutube = false;
   private ytPlayer: any;

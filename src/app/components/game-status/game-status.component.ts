@@ -2,6 +2,7 @@ import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MovieHints } from '../../types/ost-level.model';
 import { GameStateService } from '../../core/game-state.service';
+import { TranslationService } from '../../core/i18n/translation.service';
 
 @Component({
   selector: 'app-game-status',
@@ -17,6 +18,11 @@ export class GameStatusComponent {
   @Input() guessHistory: string[] = [];
 
   private readonly gameStateService = inject(GameStateService);
+  readonly translationService = inject(TranslationService);
+
+  t(key: string): string {
+    return this.translationService.t(key);
+  }
 
   openLightbox() {
     this.gameStateService.activeLightboxImg.set(this.resolvedFrameUrl);

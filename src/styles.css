@@ -109,6 +109,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
+  --glow-color: 20, 202, 216; /* Default is brand-cyan */
 }
 
 /* Clapper stripes top bar */
@@ -225,8 +226,8 @@
 }
 
 .clapper-card:hover .clapper-body {
-  border-color: rgba(20, 202, 216, 0.4);
-  box-shadow: 0 12px 40px rgba(20, 202, 216, 0.25);
+  border-color: rgba(var(--glow-color), 0.4);
+  box-shadow: 0 12px 40px rgba(var(--glow-color), 0.25);
 }
 
 /* Inner content spacing */

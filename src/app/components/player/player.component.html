@@ -18,10 +18,10 @@
     <div class="flex justify-between items-center">
       <span class="text-xs font-bold text-teal-400 uppercase tracking-widest flex items-center gap-1.5">
         <span class="w-2 h-2 bg-teal-500 rounded-full animate-ping"></span>
-        Visualizador de Ondas
+        {{ t('PLAYER.WAVEFORM') }}
       </span>
       <span class="text-2xs text-slate-500 font-mono">
-        Límite: <strong class="text-slate-300 font-bold font-mono">{{ allowedDuration }}s</strong>
+        {{ t('PLAYER.LIMIT') }} <strong class="text-slate-300 font-bold font-mono">{{ allowedDuration }}s</strong>
       </span>
     </div>
 
@@ -30,8 +30,9 @@
       <canvas #visualizerCanvas class="w-full h-full block"></canvas>
       <div *ngIf="!isAudioLoaded"
         class="absolute inset-0 flex items-center justify-center bg-obsidian-950/40 backdrop-blur-3xs">
-        <span class="text-5xs font-black text-brand-purple uppercase tracking-widest animate-pulse">Cargando pistas de
-          audio...</span>
+        <span class="text-5xs font-black text-brand-purple uppercase tracking-widest animate-pulse">
+          {{ t('PLAYER.LOADING_AUDIO') }}
+        </span>
       </div>
     </div>
 
@@ -88,11 +89,11 @@
       <!-- Status indicator (expanded to w-16 to avoid text overflow clashing) -->
       <div class="w-16 text-center">
         <span *ngIf="!isAudioLoaded"
-          class="text-4xs font-bold text-brand-cyan uppercase tracking-wider animate-pulse">Carga</span>
+          class="text-4xs font-bold text-brand-cyan uppercase tracking-wider animate-pulse">{{ t('PLAYER.STATUS_LOADING') }}</span>
         <span *ngIf="isAudioLoaded && isPlaying"
-          class="text-4xs font-bold text-teal-400 uppercase tracking-wider">Sonando</span>
+          class="text-4xs font-bold text-teal-400 uppercase tracking-wider">{{ t('PLAYER.STATUS_PLAYING') }}</span>
         <span *ngIf="isAudioLoaded && !isPlaying"
-          class="text-4xs font-bold text-slate-500 uppercase tracking-wider">Pausa</span>
+          class="text-4xs font-bold text-slate-500 uppercase tracking-wider">{{ t('PLAYER.STATUS_PAUSE') }}</span>
       </div>
 
       <!-- Volume Control (protect ears) -->
