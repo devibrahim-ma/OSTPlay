@@ -15,6 +15,7 @@ export interface OSTLevel {
   correctAnswers: string[]; // Variations (e.g. ["Titanic", "El Titanic"])
   hints: MovieHints;      // Structured clues revealed on failures
   audioStartOffset?: number; // Optional custom audio start offset in seconds
+  popularity?: number;    // Optional TMDb popularity score
 }
 
 export type LevelStatus = 'neutral' | 'won' | 'lost';

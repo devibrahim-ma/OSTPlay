@@ -1,4 +1,4 @@
-<header class="border-b border-obsidian-900/20 bg-obsidian-950/40 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between min-h-[85px]">
+<header class="bg-obsidian-950/40 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between min-h-[85px]">
   <!-- Left: Navigation buttons -->
   <div class="flex items-center w-1/4 gap-2">
     <!-- Back to levels grid / modes -->
@@ -26,14 +26,14 @@
     </button>
   </div>
 
-  <!-- Center: Centered Logo & Title -->
-  <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 z-10 pointer-events-auto text-center w-[300px] sm:w-[450px]">
-    <div class="flex items-center gap-3">
-      <img src="assets/logo.png" class="w-12 h-12 object-contain logo-animated" alt="OSTPlay Logo" />
+  <!-- Center: Brand Animated Logo -->
+  <div class="w-2/4 flex justify-center">
+    <button (click)="goToModes()" class="flex items-center gap-3 select-none active:scale-98 transition duration-200 cursor-pointer">
+      <img src="assets/logo.png" alt="OSTPlay Logo" class="w-9 h-9 logo-animated" />
       <h1 class="text-2xl font-black font-display tracking-widest bg-gradient-to-r from-brand-cyan via-brand-indigo to-brand-purple bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(20,202,216,0.15)] select-none">
         OSTPLAY
       </h1>
-    </div>
+    </button>
   </div>
 
   <!-- Right: Global Actions (Progreso Button) -->
@@ -85,7 +85,7 @@
       <!-- Dropdown stats card -->
       <div 
         *ngIf="showStatsDropdown" 
-        class="absolute right-0 mt-3 w-80 bg-slate-950/90 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-xl z-50 space-y-4 max-h-[85vh] overflow-y-auto">
+        class="absolute right-0 mt-3 w-80 bg-slate-950 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-xl z-50 space-y-4 max-h-[85vh] overflow-y-auto">
         
         <div class="flex justify-between items-center border-b border-slate-800 pb-2">
           <span class="text-xs font-black uppercase text-brand-purple tracking-widest">{{ t('GAME.STATS') }}</span>
@@ -115,19 +115,19 @@
           <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50">
             <span class="block text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.CLASSIC') }} {{ t('NAVBAR.STREAK') }}</span>
             <span class="text-xs font-black text-brand-cyan">
-              🔥 {{ stats().streak }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ stats().maxStreak }})
+              {{ stats().streak }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ stats().maxStreak }})
             </span>
           </div>
           <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50 col-span-2 flex justify-between items-center px-4 py-1.5">
             <span class="text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.SURVIVAL') }} {{ t('NAVBAR.ANIME') }}</span>
             <span class="text-xs font-black text-orange-400">
-              🔥 {{ animeStreak() }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ maxAnimeStreak() }})
+              {{ animeStreak() }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ maxAnimeStreak() }})
             </span>
           </div>
           <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50 col-span-2 flex justify-between items-center px-4 py-1.5">
             <span class="text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.SURVIVAL') }} {{ t('NAVBAR.RANDOM') }}</span>
             <span class="text-xs font-black text-yellow-500">
-              🔥 {{ randomStreak() }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ maxRandomStreak() }})
+              {{ randomStreak() }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ maxRandomStreak() }})
             </span>
           </div>
         </div>
@@ -156,14 +156,6 @@
           {{ t('NAVBAR.RESET_PROGRESS') }}
         </button>
       </div>
-    </div>
-  </div>
-
-  <!-- Thin Category progress bar -->
-  <div *ngIf="currentView() === 'grid'" class="absolute bottom-0 left-0 right-0 h-[3px] bg-obsidian-950/40">
-    <div 
-      class="h-full bg-gradient-to-r from-brand-cyan via-brand-indigo to-brand-purple transition-all duration-500" 
-      [style.width.%]="completedPercentage()">
     </div>
   </div>
 </header>

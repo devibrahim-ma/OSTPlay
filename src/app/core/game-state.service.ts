@@ -212,7 +212,8 @@ export class GameStateService {
             frameUrl: data['hints']?.frameUrl || '',
             plot: data['hints']?.plot || ''
           },
-          audioStartOffset: data['audioStartOffset'] !== undefined ? Number(data['audioStartOffset']) : undefined
+          audioStartOffset: data['audioStartOffset'] !== undefined ? Number(data['audioStartOffset']) : undefined,
+          popularity: data['popularity'] !== undefined ? Number(data['popularity']) : 0
         });
       });
 
@@ -222,15 +223,8 @@ export class GameStateService {
         fetchedLevels.push(...ANIME_OST_LEVELS);
       }
 
-      // Mezclar los niveles usando un hash determinista del ID para orden consistente
-      const getLevelHash = (id: string) => {
-        let hash = 0;
-        for (let i = 0; i < id.length; i++) {
-          hash = id.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return hash;
-      };
-      fetchedLevels.sort((a, b) => getLevelHash(a.levelId) - getLevelHash(b.levelId));
+      // Ordenar los niveles de mayor a menor popularidad de TMDb (los más famosos primero)
+      fetchedLevels.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
 
       this.allLevels.set(fetchedLevels);
       this.initializeStatuses(fetchedLevels);
