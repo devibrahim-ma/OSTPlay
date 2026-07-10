@@ -1,8 +1,9 @@
 <div class="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-brand-purple/30 selection:text-brand-cyan relative overflow-x-hidden main-bg-cover pt-[85px]">
   
-  <!-- Dynamic Ambient Backdrop (Cinematic mode) -->
-  <div *ngIf="currentLevel() !== null" class="absolute inset-0 z-0 overflow-hidden pointer-events-none transition-all duration-1000 ease-in-out">
-    <img [src]="resolvedFrameUrl()" alt="" class="w-full h-full object-cover scale-110 blur-3xl opacity-15 ambient-glow" />
+  <!-- Static Brand Ambient Backdrop -->
+  <div *ngIf="currentLevel() !== null" class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-brand-cyan/10 rounded-full blur-[120px] ambient-glow"></div>
+    <div class="absolute top-1/4 -right-40 w-96 h-96 bg-brand-purple/10 rounded-full blur-[120px] ambient-glow"></div>
   </div>
 
   <!-- Navigation Header -->
@@ -25,8 +26,8 @@
     <!-- If playing normally -->
     <ng-container *ngIf="!(currentGameMode() === 'daily' && gameStateService.dailyModeService.isDailyCompleted())">
       
-      <!-- Left Column: Mini levels / Info sidebar (md:col-span-3) -->
-      <div class="md:col-span-3 flex flex-col gap-2.5 max-h-[75vh] overflow-y-auto pr-2 border-r border-obsidian-800/40">
+      <!-- Left Column: Mini levels / Info sidebar (md:col-span-3) - Hidden on mobile -->
+      <div class="hidden md:flex md:col-span-3 flex-col gap-2.5 max-h-[75vh] overflow-y-auto pr-2 border-r border-obsidian-800/40">
         
         <!-- Classic / Anime grid selection -->
         <ng-container *ngIf="currentGameMode() !== 'random' && currentGameMode() !== 'daily'">
