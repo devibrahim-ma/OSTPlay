@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { db } from './firebase.config';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { OSTLevel, LevelStatus } from '../types/ost-level.model';
 import { ANIME_OST_LEVELS } from '../data/animeLevels';
 import { ClassicModeService } from './modes/classic-mode.service';
@@ -8,6 +8,7 @@ import { AnimeModeService } from './modes/anime-mode.service';
 import { RandomModeService } from './modes/random-mode.service';
 import { DailyModeService } from './modes/daily-mode.service';
 import { TranslationService } from './i18n/translation.service';
+import { AuthService } from './auth.service';
 
 export interface GameStats {
   moviesPlayed: number;
@@ -31,6 +32,9 @@ export class GameStateService {
   readonly randomModeService = inject(RandomModeService);
   readonly dailyModeService = inject(DailyModeService);
   readonly translationService = inject(TranslationService);
+  readonly authService = inject(AuthService);
+
+  isInitializedFromCloud = false;
 
   // All levels loaded from Firestore + local fallbacks
   allLevels = signal<OSTLevel[]>([]);
@@ -131,6 +135,72 @@ export class GameStateService {
   constructor() {
     this.loadLevelsFromFirestore();
     this.loadLocalStats();
+
+    // Effect to load stats/statuses from Firestore or local storage on Login
+    effect(async () => {
+      const user = this.authService.currentUser();
+      const levels = this.allLevels();
+      if (user && levels.length > 0) {
+        this.isInitializedFromCloud = false;
+        if (user.uid === 'guest') {
+          // Guest mode: load progress from local storage
+          this.loadLocalStats();
+          this.initializeStatuses(levels);
+          this.isInitializedFromCloud = true;
+        } else {
+          const userDocRef = doc(db, 'users', user.username.toLowerCase());
+          try {
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              const data = userDoc.data();
+              if (data['stats']) {
+                this.stats.set(data['stats']);
+              }
+              if (data['statuses']) {
+                const cloudStatuses = data['statuses'];
+                const initial: Record<string, LevelStatus> = {};
+                levels.forEach(lvl => {
+                  initial[lvl.levelId] = cloudStatuses[lvl.levelId] || 'neutral';
+                });
+                this.levelStatuses.set(initial);
+              }
+            }
+          } catch (e) {
+            console.error('Error loading stats from Firestore:', e);
+          } finally {
+            this.isInitializedFromCloud = true;
+          }
+        }
+      } else {
+        this.isInitializedFromCloud = false;
+      }
+    }, { allowSignalWrites: true });
+
+    // Effect to save stats/statuses to Firestore or local storage on changes
+    effect(async () => {
+      const user = this.authService.currentUser();
+      const stats = this.stats();
+      const statuses = this.levelStatuses();
+
+      if (user) {
+        // Local storage is updated for everyone (guests and authenticated users)
+        localStorage.setItem('ostplay_stats', JSON.stringify(stats));
+        localStorage.setItem('ostplay_statuses', JSON.stringify(statuses));
+
+        if (user.uid !== 'guest' && this.isInitializedFromCloud) {
+          // Authenticated users also save to Firestore
+          const userDocRef = doc(db, 'users', user.username.toLowerCase());
+          try {
+            await updateDoc(userDocRef, {
+              stats,
+              statuses
+            });
+          } catch (e) {
+            console.error('Error syncing progress to Firestore:', e);
+          }
+        }
+      }
+    });
 
     // Effect to dynamically translate active level's title and plot overview
     effect(async () => {

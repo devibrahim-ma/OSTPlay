@@ -1,0 +1,152 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-obsidian-950/90 main-bg-cover overflow-y-auto">
+  <!-- Glassmorphic Login Card -->
+  <div class="relative w-full max-w-lg my-2 bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-800/80 shadow-2xl p-5 md:p-7 space-y-4 overflow-hidden max-h-[96vh] flex flex-col">
+    <!-- Top Decorative Line -->
+    <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-cyan via-brand-indigo to-brand-purple"></div>
+
+    <!-- Header Logo -->
+    <div class="flex flex-col items-center text-center space-y-3 pt-2">
+      <img src="assets/logo.png" alt="OSTPlay Logo" class="w-20 h-20 object-contain logo-animated" />
+      <div>
+        <h2 class="text-2xl font-black font-display tracking-widest bg-gradient-to-r from-brand-cyan via-brand-indigo to-brand-purple bg-clip-text text-transparent uppercase select-none">
+          OSTPLAY
+        </h2>
+      </div>
+    </div>
+
+    <!-- Tabs selector -->
+    <div class="grid grid-cols-2 p-1 bg-slate-950/60 border border-slate-800/50 rounded-xl">
+      <button 
+        type="button" 
+        (click)="setTab(false)"
+        [class.bg-slate-900]="!isRegisterTab"
+        [class.text-white]="!isRegisterTab"
+        [class.text-slate-400]="isRegisterTab"
+        class="py-2.5 text-xs font-bold rounded-lg transition duration-200 cursor-pointer select-none">
+        {{ t('LOGIN.SIGN_IN_TAB') }}
+      </button>
+      <button 
+        type="button" 
+        (click)="setTab(true)"
+        [class.bg-slate-900]="isRegisterTab"
+        [class.text-white]="isRegisterTab"
+        [class.text-slate-400]="!isRegisterTab"
+        class="py-2.5 text-xs font-bold rounded-lg transition duration-200 cursor-pointer select-none">
+        {{ t('LOGIN.SIGN_UP_TAB') }}
+      </button>
+    </div>
+
+    <!-- Form container (scrollable if needed) -->
+    <form (ngSubmit)="onSubmit()" class="space-y-4 overflow-y-auto flex-grow pr-1">
+
+      <!-- Username Input -->
+      <div class="space-y-1.5">
+        <label for="username" class="block text-4xs font-black text-slate-400 uppercase tracking-widest">
+          {{ t('LOGIN.USERNAME') }}
+        </label>
+        <input 
+          id="username"
+          type="text" 
+          name="username"
+          [(ngModel)]="username"
+          [placeholder]="t('LOGIN.USERNAME_PLACEHOLDER')"
+          autocomplete="username"
+          required
+          class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/20 transition duration-200" />
+        <div *ngIf="usernameError" class="text-3xs text-red-500 font-bold mt-1 text-left px-1">
+          {{ usernameError }}
+        </div>
+      </div>
+
+      <!-- Email Input (Only on register) -->
+      <div *ngIf="isRegisterTab" class="space-y-1.5">
+        <label for="email" class="block text-4xs font-black text-slate-400 uppercase tracking-widest">
+          {{ t('LOGIN.EMAIL') }}
+        </label>
+        <input 
+          id="email"
+          type="email" 
+          name="email"
+          [(ngModel)]="email"
+          [placeholder]="t('LOGIN.EMAIL_PLACEHOLDER')"
+          autocomplete="email"
+          required
+          class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-brand-cyan focus:ring-1 focus:ring-brand-cyan/20 transition duration-200" />
+        <div *ngIf="emailError" class="text-3xs text-red-500 font-bold mt-1 text-left px-1">
+          {{ emailError }}
+        </div>
+      </div>
+
+      <!-- Password Input -->
+      <div class="space-y-1.5">
+        <label for="password" class="block text-4xs font-black text-slate-400 uppercase tracking-widest">
+          {{ t('LOGIN.PASSWORD') }}
+        </label>
+        <input 
+          id="password"
+          type="password" 
+          name="password"
+          [(ngModel)]="password"
+          [placeholder]="t('LOGIN.PASSWORD_PLACEHOLDER')"
+          autocomplete="current-password"
+          required
+          class="w-full bg-slate-950/80 border border-slate-800/80 rounded-xl px-4 py-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-brand-purple focus:ring-1 focus:ring-brand-purple/20 transition duration-200" />
+        <div *ngIf="passwordError" class="text-3xs text-red-500 font-bold mt-1 text-left px-1">
+          {{ passwordError }}
+        </div>
+      </div>
+
+      <!-- Avatar Selector (Only on register) -->
+      <div *ngIf="isRegisterTab" class="space-y-2 pt-1">
+        <label class="block text-4xs font-black text-slate-400 uppercase tracking-widest">
+          {{ t('LOGIN.SELECT_AVATAR') }}
+        </label>
+        <div class="grid grid-cols-4 gap-3 max-h-52 overflow-y-auto p-2 bg-slate-950/40 border border-slate-800/50 rounded-2xl">
+          <button
+            *ngFor="let av of avatars"
+            type="button"
+            (click)="selectAvatar(av.id)"
+            [class.ring-2]="selectedAvatarId === av.id"
+            [class.ring-brand-cyan]="selectedAvatarId === av.id"
+            [class.scale-105]="selectedAvatarId === av.id"
+            [title]="av.name"
+            class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-[1.08] cursor-pointer select-none overflow-hidden border border-slate-800"
+            [ngClass]="av.gradient">
+            <img [src]="av.avatarUrl" [alt]="av.name" class="w-full h-full object-cover" />
+          </button>
+        </div>
+      </div>
+
+      <!-- General Error Card -->
+      <div *ngIf="generalError" class="bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl p-3 text-3xs font-bold text-center leading-relaxed">
+        {{ generalError }}
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit"
+        [disabled]="isLoading || !username || (isRegisterTab && !email) || !password"
+        [ngClass]="{
+          'from-brand-cyan to-brand-indigo shadow-brand-cyan/20': isRegisterTab,
+          'from-brand-purple to-brand-indigo shadow-brand-purple/20': !isRegisterTab
+        }"
+        class="w-full py-4 px-6 mt-3 bg-gradient-to-r disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-600 disabled:shadow-none text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all duration-200 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer select-none">
+        <span *ngIf="isLoading" class="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin"></span>
+        <span>
+          {{ isLoading ? t('LOGIN.LOADING') : (isRegisterTab ? t('LOGIN.CREATE_ACCOUNT') : t('LOGIN.ENTER')) }}
+        </span>
+      </button>
+
+      <!-- Play as Guest Button -->
+      <div class="text-center pt-2">
+        <button 
+          type="button"
+          (click)="enterAsGuest()"
+          class="text-4xs font-bold text-slate-500 hover:text-brand-cyan uppercase tracking-widest transition duration-200 cursor-pointer select-none">
+          {{ t('LOGIN.ENTER_AS_GUEST') }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

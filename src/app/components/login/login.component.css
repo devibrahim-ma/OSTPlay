@@ -1,0 +1,34 @@
+/* Custom styling for login component */
+
+/* Profile avatar selection grid scrollbar styling */
+.grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+}
+
+.grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Form scrollbar */
+form::-webkit-scrollbar {
+  width: 4px;
+}
+form::-webkit-scrollbar-track {
+  background: transparent;
+}
+form::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 99px;
+}
+form::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}

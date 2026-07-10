@@ -12,10 +12,13 @@ export const ES_TRANSLATIONS = {
     STREAK: 'Racha',
     MAX_STREAK: 'Máximo',
     CLOSE: 'Cerrar',
-    BACK: 'Volver',
     GAME_MODES: 'Modos de Juego',
     RESET_PROGRESS: 'Reiniciar Progreso',
-    ATTEMPTS_CLASSIC: 'Intentos ganados (Clásico)'
+    ATTEMPTS_CLASSIC: 'Intentos ganados (Clásico)',
+    CONFIRM_LOGOUT_TITLE: '¿Cerrar Sesión?',
+    CONFIRM_LOGOUT_DESC: '¿Estás seguro de que deseas cerrar tu sesión actual?',
+    CONFIRM_LOGOUT_CONFIRM: 'Sí, Cerrar Sesión',
+    CONFIRM_LOGOUT_CANCEL: 'Cancelar'
   },
   HOME: {
     SELECT_MODE: 'Selecciona un Modo de Juego',
@@ -110,5 +113,37 @@ export const ES_TRANSLATIONS = {
     ATTEMPTS: 'Intentos:',
     NEXT_CHALLENGE: 'Siguiente Reto en:',
     ALREADY_PLAYED: 'Ya has jugado el reto de hoy. Vuelve mañana para un nuevo desafío.'
+  },
+  LOGIN: {
+    TITLE: 'Adivina la Banda Sonora',
+    SIGN_IN_TAB: 'Iniciar Sesión',
+    SIGN_UP_TAB: 'Crear Cuenta',
+    USERNAME: 'Nombre de Usuario',
+    USERNAME_PLACEHOLDER: 'Ej: ibrahim',
+    EMAIL: 'Correo Electrónico',
+    EMAIL_PLACEHOLDER: 'ejemplo@correo.com',
+    PASSWORD: 'Contraseña',
+    PASSWORD_PLACEHOLDER: 'Mínimo 6 caracteres',
+    SELECT_AVATAR: 'Selecciona tu Avatar Cinéfilo',
+    ENTER: 'Entrar',
+    CREATE_ACCOUNT: 'Crear Cuenta',
+    ENTER_AS_GUEST: 'Entrar como Invitado ➔',
+    LOADING: 'Cargando...',
+    ATTENTION: '¡Atención!',
+    ACCEPT: 'Aceptar',
+    PROFILE_CINEMA: 'Perfil Cinéfilo',
+    LOGOUT: 'Cerrar Sesión',
+    ERRORS: {
+      USERNAME_REQUIRED: 'Por favor, introduce tu nombre de usuario.',
+      USERNAME_MIN_LENGTH: 'El nombre de usuario debe tener al menos 3 caracteres.',
+      PASSWORD_REQUIRED: 'Por favor, introduce tu contraseña.',
+      PASSWORD_MIN_LENGTH: 'La contraseña debe tener al menos 6 caracteres.',
+      EMAIL_REQUIRED: 'Por favor, introduce tu correo electrónico.',
+      USERNAME_TAKEN: 'El nombre de usuario ya está registrado por otro jugador.',
+      INVALID_CREDENTIALS: 'Nombre de usuario o contraseña incorrectos.',
+      EMAIL_IN_USE: 'El correo electrónico ya está registrado por otra cuenta.',
+      INVALID_EMAIL: 'El correo electrónico introducido no es válido.',
+      UNKNOWN_ERROR: 'Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo.'
+    }
   }
 };

@@ -11,6 +11,8 @@ import { ResetConfirmModalComponent } from './components/reset-confirm-modal/res
 import { DailyStatusComponent } from './components/daily-status/daily-status.component';
 import { SurvivalStatsComponent } from './components/survival-stats/survival-stats.component';
 import { TranslationService } from './core/i18n/translation.service';
+import { AuthService } from './core/auth.service';
+import { LoginComponent } from './components/login/login.component';
 
 @Component({
   selector: 'app-root',
@@ -25,7 +27,8 @@ import { TranslationService } from './core/i18n/translation.service';
     GameStatusComponent,
     ResetConfirmModalComponent,
     DailyStatusComponent,
-    SurvivalStatsComponent
+    SurvivalStatsComponent,
+    LoginComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
@@ -33,6 +36,7 @@ import { TranslationService } from './core/i18n/translation.service';
 export class App {
   readonly gameStateService = inject(GameStateService);
   readonly translationService = inject(TranslationService);
+  readonly authService = inject(AuthService);
 
   t(key: string): string {
     return this.translationService.t(key);

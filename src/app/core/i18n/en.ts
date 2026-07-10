@@ -12,10 +12,13 @@ export const EN_TRANSLATIONS = {
     STREAK: 'Streak',
     MAX_STREAK: 'Max',
     CLOSE: 'Close',
-    BACK: 'Back',
     GAME_MODES: 'Game Modes',
     RESET_PROGRESS: 'Reset Progress',
-    ATTEMPTS_CLASSIC: 'Attempts won (Classic)'
+    ATTEMPTS_CLASSIC: 'Attempts won (Classic)',
+    CONFIRM_LOGOUT_TITLE: 'Log Out?',
+    CONFIRM_LOGOUT_DESC: 'Are you sure you want to log out of your current session?',
+    CONFIRM_LOGOUT_CONFIRM: 'Yes, Log Out',
+    CONFIRM_LOGOUT_CANCEL: 'Cancel'
   },
   HOME: {
     SELECT_MODE: 'Select Game Mode',
@@ -110,5 +113,37 @@ export const EN_TRANSLATIONS = {
     ATTEMPTS: 'Attempts:',
     NEXT_CHALLENGE: 'Next Challenge in:',
     ALREADY_PLAYED: 'You already played today\'s challenge. Come back tomorrow for a new one.'
+  },
+  LOGIN: {
+    TITLE: 'Guess the Soundtrack',
+    SIGN_IN_TAB: 'Sign In',
+    SIGN_UP_TAB: 'Sign Up',
+    USERNAME: 'Username',
+    USERNAME_PLACEHOLDER: 'E.g., ibrahim',
+    EMAIL: 'Email Address',
+    EMAIL_PLACEHOLDER: 'example@mail.com',
+    PASSWORD: 'Password',
+    PASSWORD_PLACEHOLDER: 'Minimum 6 characters',
+    SELECT_AVATAR: 'Select your Cinephile Avatar',
+    ENTER: 'Enter',
+    CREATE_ACCOUNT: 'Create Account',
+    ENTER_AS_GUEST: 'Play as Guest ➔',
+    LOADING: 'Loading...',
+    ATTENTION: 'Attention!',
+    ACCEPT: 'Accept',
+    PROFILE_CINEMA: 'Cinephile Profile',
+    LOGOUT: 'Log Out',
+    ERRORS: {
+      USERNAME_REQUIRED: 'Please enter your username.',
+      USERNAME_MIN_LENGTH: 'Username must be at least 3 characters long.',
+      PASSWORD_REQUIRED: 'Please enter your password.',
+      PASSWORD_MIN_LENGTH: 'Password must be at least 6 characters long.',
+      EMAIL_REQUIRED: 'Please enter your email address.',
+      USERNAME_TAKEN: 'The username is already registered by another player.',
+      INVALID_CREDENTIALS: 'Incorrect username or password.',
+      EMAIL_IN_USE: 'The email address is already registered by another account.',
+      INVALID_EMAIL: 'The email address entered is invalid.',
+      UNKNOWN_ERROR: 'An unexpected error occurred. Please try again.'
+    }
   }
 };

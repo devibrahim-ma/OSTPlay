@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from '../../core/game-state.service';
 import { TranslationService } from '../../core/i18n/translation.service';
+import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -16,6 +17,23 @@ import { TranslationService } from '../../core/i18n/translation.service';
 export class NavbarComponent {
   readonly gameStateService = inject(GameStateService);
   readonly translationService = inject(TranslationService);
+  readonly authService = inject(AuthService);
+
+  showLogoutConfirm = false;
+
+  triggerLogoutConfirm() {
+    this.showLogoutConfirm = true;
+    this.showStatsDropdown = false;
+  }
+
+  confirmLogout() {
+    this.authService.logout();
+    this.showLogoutConfirm = false;
+  }
+
+  cancelLogout() {
+    this.showLogoutConfirm = false;
+  }
 
   readonly currentLang = this.translationService.currentLang;
   t(key: string): string {
