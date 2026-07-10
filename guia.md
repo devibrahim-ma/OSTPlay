@@ -364,4 +364,37 @@ Sigue esta guía paso a paso para configurar o modificar tus nodos en n8n:
 
 ---
 
-Una vez que guardes y hagas clic en **Execute Workflow** en n8n, tu base de datos Firestore se poblará automáticamente con los 1000 niveles limpios y optimizados para consumir directamente en el código de Angular.
+Una vez que guardes y hagas clic en **Execute Workflow** en n8n, tu base de datos Firestore se poblará automáticamente con los 1000 niveles limpios y optimizados para consumir directamente en el código de Angular.
+
+---
+
+## 📱 Propuesta de Publicación para LinkedIn
+
+Aquí tienes una propuesta de post cercana, personal y directa para compartir tu nuevo proyecto:
+
+***
+
+**¿Eres capaz de adivinar una película, serie o anime solo escuchando unos segundos de su banda sonora? 🎬🎵**
+
+Hoy os quiero compartir un proyecto personal que he estado desarrollando y al que le tengo mucho cariño: **OSTPlay** (https://ost-play.vercel.app/).
+
+Siempre me han apasionado las bandas sonoras y los juegos de trivia, así que decidí unir ambos mundos. 
+
+**¿Cómo funciona?**
+1. Escuchas un fragmento de la música.
+2. Si te quedas atascado, puedes desbloquear pistas (el director, los actores principales, la sinopsis, ¡o incluso un fotograma de la película!).
+3. Escribes tu respuesta y tratas de mantener tu racha de aciertos lo más alta posible.
+
+**El stack detrás del proyecto:**
+- **Frontend:** Angular 21, Tailwind CSS y Framer Motion (para conseguir una experiencia fluida y con micro-animaciones premium).
+- **Backend/Data:** Automatizaciones con n8n y scripts en Node.js para poblar y limpiar más de 1000 niveles.
+- **Base de datos:** Google Cloud Firestore.
+- **Móvil:** ¡Empaquetado y listo para Android con Capacitor para poder jugarlo de manera nativa en el móvil!
+
+Ha sido un reto genial a nivel técnico, sobre todo optimizando el reproductor multimedia y los layouts para que se sientan como una aplicación nativa. 
+
+Os invito a probarlo y a retarme en los comentarios. ¿Cuál es vuestra mejor racha? 👇
+
+¡A jugar! 🚀
+
+#Angular #TypeScript #WebDevelopment #Capacitor #MobileApps #n8n #SideProject #Cine #IndieDev

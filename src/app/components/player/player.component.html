@@ -56,11 +56,11 @@
     </div>
 
     <!-- Controls -->
-    <div class="flex justify-center items-center gap-6">
+    <div class="flex justify-center items-center gap-3 sm:gap-6">
       <!-- Rewind to 0 -->
       <button type="button" (click)="rewind()" [disabled]="!isAudioLoaded"
-        class="p-2.5 bg-obsidian-950 border border-obsidian-800 rounded-full text-slate-400 hover:text-white hover:border-slate-700 hover:bg-obsidian-850 transition disabled:opacity-40 disabled:pointer-events-none active:scale-90">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        class="p-2 sm:p-2.5 bg-obsidian-950 border border-obsidian-800 rounded-full text-slate-400 hover:text-white hover:border-slate-700 hover:bg-obsidian-850 transition disabled:opacity-40 disabled:pointer-events-none active:scale-90">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4z" />
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -71,33 +71,33 @@
       <!-- Play/Pause Circular Neon Button -->
       <button type="button" (click)="togglePlay()" [disabled]="!isAudioLoaded" [class.bg-teal-500]="isPlaying"
         [class.text-obsidian-950]="isPlaying" [class.bg-obsidian-950]="!isPlaying" [class.text-teal-400]="!isPlaying"
-        class="w-14 h-14 rounded-full border border-teal-500/30 flex items-center justify-center shadow-lg hover:shadow-teal-500/20 transition-all duration-300 disabled:opacity-40 disabled:pointer-events-none active:scale-95">
+        class="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-teal-500/30 flex items-center justify-center shadow-lg hover:shadow-teal-500/20 transition-all duration-300 disabled:opacity-40 disabled:pointer-events-none active:scale-95">
         <!-- Play Icon -->
-        <svg *ngIf="!isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 translate-x-0.5" fill="none"
+        <svg *ngIf="!isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 sm:w-7 sm:h-7 translate-x-0.5" fill="none"
           viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
         </svg>
         <!-- Pause Icon -->
-        <svg *ngIf="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24"
+        <svg *ngIf="isPlaying" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 sm:w-7 sm:h-7" fill="none" viewBox="0 0 24 24"
           stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </button>
 
-      <!-- Status indicator (expanded to w-16 to avoid text overflow clashing) -->
-      <div class="w-16 text-center">
+      <!-- Status indicator -->
+      <div class="w-12 sm:w-16 text-center">
         <span *ngIf="!isAudioLoaded"
-          class="text-4xs font-bold text-brand-cyan uppercase tracking-wider animate-pulse">{{ t('PLAYER.STATUS_LOADING') }}</span>
+          class="text-5xs sm:text-4xs font-bold text-brand-cyan uppercase tracking-wider animate-pulse">{{ t('PLAYER.STATUS_LOADING') }}</span>
         <span *ngIf="isAudioLoaded && isPlaying"
-          class="text-4xs font-bold text-teal-400 uppercase tracking-wider">{{ t('PLAYER.STATUS_PLAYING') }}</span>
+          class="text-5xs sm:text-4xs font-bold text-teal-400 uppercase tracking-wider">{{ t('PLAYER.STATUS_PLAYING') }}</span>
         <span *ngIf="isAudioLoaded && !isPlaying"
-          class="text-4xs font-bold text-slate-500 uppercase tracking-wider">{{ t('PLAYER.STATUS_PAUSE') }}</span>
+          class="text-5xs sm:text-4xs font-bold text-slate-500 uppercase tracking-wider">{{ t('PLAYER.STATUS_PAUSE') }}</span>
       </div>
 
-      <!-- Volume Control (protect ears) -->
-      <div class="flex items-center gap-2 border-l border-obsidian-850 pl-4 ml-2">
+      <!-- Volume Control (hidden on mobile, visible on sm and up) -->
+      <div class="hidden sm:flex items-center gap-2 border-l border-obsidian-850 pl-4 ml-2">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24"
           stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"

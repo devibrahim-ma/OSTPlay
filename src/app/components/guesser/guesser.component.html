@@ -24,7 +24,8 @@
         <!-- Custom floating glassmorphic suggestions card -->
         <div 
           *ngIf="showSuggestions && filteredOptions.length > 0" 
-          class="absolute z-50 left-0 right-0 mt-2 max-h-56 overflow-y-auto rounded-xl glass-panel shadow-2xl divide-y divide-obsidian-800 border border-obsidian-700/50">
+          class="absolute z-50 left-0 right-0 mt-2 max-h-56 overflow-y-auto rounded-xl glass-panel shadow-2xl divide-y divide-obsidian-800 border border-obsidian-700/50"
+          style="background-color: rgba(13, 15, 23, 0.96);">
           <button
             *ngFor="let option of filteredOptions; let i = index"
             type="button"
@@ -32,7 +33,7 @@
             [class.bg-teal-500/10]="i === activeSuggestionIndex"
             [class.text-teal-400]="i === activeSuggestionIndex"
             [class.text-slate-300]="i !== activeSuggestionIndex"
-            class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-teal-500/5 hover:text-teal-400 transition-colors flex items-center gap-2">
+            class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-teal-500/5 hover:text-teal-400 transition-colors flex items-center gap-2 cursor-pointer">
             <span>🎬</span>
             <span>{{ option }}</span>
           </button>

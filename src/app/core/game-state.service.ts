@@ -418,9 +418,11 @@ export class GameStateService {
     // Map English title back to original Spanish title if matched in the map
     const originalGuess = this.translationService.englishToSpanishMap.get(guess.toLowerCase().trim()) || guess;
     const normalizedGuess = this.normalizeText(originalGuess);
-    const isCorrect = level.correctAnswers.some(
-      ans => this.normalizeText(ans) === normalizedGuess
-    );
+    const isCorrect = 
+      this.normalizeText(level.title) === normalizedGuess ||
+      level.correctAnswers.some(
+        ans => this.normalizeText(ans) === normalizedGuess
+      );
 
     if (isCorrect) {
       this.gameState.set('won');

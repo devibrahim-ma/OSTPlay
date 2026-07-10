@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OSTPlay</string>
+    <string name="title_activity_main">OSTPlay</string>
+    <string name="package_name">com.ostplay.app</string>
+    <string name="custom_url_scheme">com.ostplay.app</string>
+</resources>
