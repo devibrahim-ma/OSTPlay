@@ -13,6 +13,11 @@ import { TranslationService } from '../../core/i18n/translation.service';
 export class HomeComponent {
   readonly gameStateService = inject(GameStateService);
   readonly translationService = inject(TranslationService);
+  isWeb = true;
+
+  constructor() {
+    this.isWeb = !(window as any).Capacitor?.isNative;
+  }
 
   t(key: string): string {
     return this.translationService.t(key);
