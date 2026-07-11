@@ -42,7 +42,7 @@
     <div class="relative flex items-center">
       <button 
         type="button" 
-        (click)="toggleLangDropdown()"
+        (click)="toggleLangDropdown($event)"
         class="flex items-center justify-center transition duration-200 hover:opacity-85 cursor-pointer select-none">
         <img 
           [src]="currentLang() === 'es' ? 'https://flagcdn.com/w40/es.png' : 'https://flagcdn.com/w40/gb.png'" 
@@ -77,7 +77,7 @@
     <div class="relative" *ngIf="authService.currentUser() !== null">
       <button 
         type="button"
-        (click)="toggleStatsDropdown()"
+        (click)="toggleStatsDropdown($event)"
         class="flex items-center gap-0 sm:gap-2 transition cursor-pointer select-none border-0 bg-transparent p-0 sm:border sm:border-slate-800/80 sm:bg-slate-950/40 sm:hover:border-brand-purple/40 sm:pl-1.5 sm:pr-3 sm:py-1 sm:rounded-full">
         
         <!-- Small User Avatar -->

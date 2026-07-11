@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from '../../core/game-state.service';
 import { TranslationService } from '../../core/i18n/translation.service';
@@ -18,6 +18,7 @@ export class NavbarComponent {
   readonly gameStateService = inject(GameStateService);
   readonly translationService = inject(TranslationService);
   readonly authService = inject(AuthService);
+  private readonly elementRef = inject(ElementRef);
 
   showLogoutConfirm = false;
 
@@ -56,8 +57,14 @@ export class NavbarComponent {
   showStatsDropdown = false;
   showLangDropdown = false;
 
-  toggleLangDropdown() {
+  toggleLangDropdown(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showLangDropdown = !this.showLangDropdown;
+    if (this.showLangDropdown) {
+      this.showStatsDropdown = false;
+    }
   }
 
   selectLanguage(lang: 'es' | 'en') {
@@ -74,8 +81,14 @@ export class NavbarComponent {
     this.showStatsDropdown = false;
   }
 
-  toggleStatsDropdown() {
+  toggleStatsDropdown(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showStatsDropdown = !this.showStatsDropdown;
+    if (this.showStatsDropdown) {
+      this.showLangDropdown = false;
+    }
   }
 
   closeStatsDropdown() {
@@ -85,5 +98,13 @@ export class NavbarComponent {
   triggerResetConfirm() {
     this.gameStateService.showResetConfirm.set(true);
     this.showStatsDropdown = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onClickOutside(event: Event) {
+    if (!this.elementRef.nativeElement.contains(event.target)) {
+      this.showLangDropdown = false;
+      this.showStatsDropdown = false;
+    }
   }
 }

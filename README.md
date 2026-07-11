@@ -126,8 +126,3 @@ node scripts/populate-youtube-ids.js
 
 te falta pasarlo a app con capacitor
 
-
-NUEVA MEJORA
-anime: Genero
-año de lanzamiento
-temporada/episodio

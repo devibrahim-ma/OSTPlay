@@ -1,9 +1,5 @@
 {
   "appId": "com.ostplay.app",
   "appName": "OSTPlay",
-  "webDir": "dist/OSTPlay/browser",
-  "server": {
-    "url": "https://ost-play.vercel.app/",
-    "cleartext": true
-  }
+  "webDir": "dist/OSTPlay/browser"
 }
