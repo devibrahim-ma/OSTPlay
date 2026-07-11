@@ -154,7 +154,8 @@
               [currentAttempt]="currentAttempt()" 
               [hints]="currentLevel()!.hints" 
               [resolvedFrameUrl]="resolvedFrameUrl()"
-              [guessHistory]="guessHistory()">
+              [guessHistory]="guessHistory()"
+              [isAnime]="currentLevel()?.isAnime || false">
             </app-game-status>
           </div>
 

@@ -36,31 +36,43 @@
     </div>
 
     <div class="space-y-3">
-      <!-- Clue 1: Actors (Unlocked at Attempt 2+) -->
+      <!-- Clue 1: Actors / Genre (Unlocked at Attempt 2+) -->
       <div 
         *ngIf="currentAttempt >= 2"
         class="bg-obsidian-900 border border-obsidian-850 rounded-xl p-4 flex flex-col gap-1.5 relative overflow-hidden transition-all duration-500 shadow-sm">
         <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand-purple"></span>
-        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">{{ t('GAME.HINTS_ACTORS_LABEL') }}</span>
-        <p class="text-xs text-slate-300 font-semibold mt-0.5 leading-relaxed">{{ hints.actors }}</p>
+        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">
+          {{ isAnime ? t('GAME.HINTS_ANIME_GENRE_LABEL') : t('GAME.HINTS_ACTORS_LABEL') }}
+        </span>
+        <p class="text-xs text-slate-300 font-semibold mt-0.5 leading-relaxed">
+          {{ isAnime ? (hints.genre || hints.actors) : hints.actors }}
+        </p>
       </div>
 
-      <!-- Clue 2: Director (Unlocked at Attempt 3+) -->
+      <!-- Clue 2: Director / Release Year (Unlocked at Attempt 3+) -->
       <div 
         *ngIf="currentAttempt >= 3"
         class="bg-obsidian-900 border border-obsidian-850 rounded-xl p-4 flex flex-col gap-1.5 relative overflow-hidden transition-all duration-500 shadow-sm">
         <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand-purple"></span>
-        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">{{ t('GAME.HINTS_DIRECTOR_LABEL') }}</span>
-        <p class="text-xs text-slate-300 font-semibold mt-0.5 leading-relaxed">{{ hints.director }}</p>
+        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">
+          {{ isAnime ? t('GAME.HINTS_ANIME_YEAR_LABEL') : t('GAME.HINTS_DIRECTOR_LABEL') }}
+        </span>
+        <p class="text-xs text-slate-300 font-semibold mt-0.5 leading-relaxed">
+          {{ isAnime ? (hints.releaseYear || hints.director) : hints.director }}
+        </p>
       </div>
 
-      <!-- Clue 3: Plot (Unlocked at Attempt 4+) -->
+      <!-- Clue 3: Plot / Seasons (Unlocked at Attempt 4+) -->
       <div 
         *ngIf="currentAttempt >= 4"
         class="bg-obsidian-900 border border-obsidian-850 rounded-xl p-4 flex flex-col gap-1.5 relative overflow-hidden transition-all duration-500 shadow-sm">
         <span class="absolute left-0 top-0 bottom-0 w-1 bg-brand-purple"></span>
-        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">{{ t('GAME.HINTS_PLOT_LABEL') }}</span>
-        <p class="text-xs text-slate-300 leading-relaxed font-normal mt-0.5">{{ hints.plot }}</p>
+        <span class="text-4xs text-brand-cyan uppercase tracking-widest font-black">
+          {{ isAnime ? t('GAME.HINTS_ANIME_SEASONS_LABEL') : t('GAME.HINTS_PLOT_LABEL') }}
+        </span>
+        <p class="text-xs text-slate-300 leading-relaxed font-normal mt-0.5">
+          {{ isAnime ? (hints.seasons || hints.plot) : getTruncatedPlot(hints.plot) }}
+        </p>
       </div>
 
       <!-- Clue 4: Image Frame (Unlocked at Attempt 5) -->

@@ -60,7 +60,7 @@ export class GameStateService {
   });
 
   // TMDb API Key (for dynamic fallback frames)
-  tmdbApiKey = signal<string>('');
+  tmdbApiKey = signal<string>('0554cd14a911e41f1caa592119361511');
 
   // Resolved dynamic URLs
   resolvedAudioUrl = signal<string>('');
@@ -213,12 +213,16 @@ export class GameStateService {
       if (lang === 'en') {
         const tTitle = await this.translationService.translateEsToEn(level.title);
         const tPlot = await this.translationService.translateEsToEn(level.hints.plot);
+        const tGenre = level.hints.genre ? await this.translationService.translateEsToEn(level.hints.genre) : '';
+        const tSeasons = level.hints.seasons ? await this.translationService.translateEsToEn(level.hints.seasons) : '';
         this.translatedLevel.set({
           ...level,
           title: tTitle,
           hints: {
             ...level.hints,
-            plot: tPlot
+            plot: tPlot,
+            genre: tGenre,
+            seasons: tSeasons
           }
         });
       } else {
@@ -280,7 +284,10 @@ export class GameStateService {
             actors: data['hints']?.actors || '',
             director: data['hints']?.director || '',
             frameUrl: data['hints']?.frameUrl || '',
-            plot: data['hints']?.plot || ''
+            plot: data['hints']?.plot || '',
+            genre: data['hints']?.genre || '',
+            releaseYear: data['hints']?.releaseYear || '',
+            seasons: data['hints']?.seasons || ''
           },
           audioStartOffset: data['audioStartOffset'] !== undefined ? Number(data['audioStartOffset']) : undefined,
           popularity: data['popularity'] !== undefined ? Number(data['popularity']) : 0
@@ -430,9 +437,10 @@ export class GameStateService {
         this.resolvedAudioUrl.set(level.audioUrl || '');
       }
 
-      if (!level.hints.frameUrl) {
-        const key = this.tmdbApiKey().trim();
-        if (key) {
+      const key = this.tmdbApiKey().trim();
+      if (key) {
+        // 1. Resolve frame image if not present
+        if (!level.hints.frameUrl) {
           const endpoint = level.category === 'series' ? 'tv' : 'movie';
           const tmdbUrl = `https://api.themoviedb.org/3/search/${endpoint}?api_key=${key}&query=${encodeURIComponent(level.title)}&language=es`;
           const tmdbRes = await fetch(tmdbUrl);
@@ -440,6 +448,52 @@ export class GameStateService {
 
           if (tmdbData.results && tmdbData.results.length > 0 && tmdbData.results[0].backdrop_path) {
             this.resolvedFrameUrl.set(`https://image.tmdb.org/t/p/w780${tmdbData.results[0].backdrop_path}`);
+          }
+        }
+
+        // 2. If it's an anime, dynamically resolve missing genre, releaseYear, or seasons from TMDb details
+        if (level.isAnime && (!level.hints.genre || !level.hints.releaseYear || !level.hints.seasons)) {
+          const tmdbUrl = `https://api.themoviedb.org/3/search/tv?api_key=${key}&query=${encodeURIComponent(level.title)}&language=es`;
+          const tmdbRes = await fetch(tmdbUrl);
+          const tmdbData = await tmdbRes.json();
+
+          if (tmdbData.results && tmdbData.results.length > 0) {
+            const show = tmdbData.results[0];
+            const tvId = show.id;
+
+            const detailsUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${key}&language=es`;
+            const detailsRes = await fetch(detailsUrl);
+            const details = await detailsRes.json();
+
+            if (details) {
+              let updated = false;
+              if (!level.hints.genre && details.genres) {
+                level.hints.genre = details.genres.map((g: any) => g.name).join(', ');
+                updated = true;
+              }
+              if (!level.hints.releaseYear && details.first_air_date) {
+                level.hints.releaseYear = details.first_air_date.split('-')[0];
+                updated = true;
+              }
+              if (!level.hints.seasons) {
+                const seasonsCount = details.number_of_seasons || 1;
+                const episodesCount = details.number_of_episodes || 0;
+                level.hints.seasons = `${seasonsCount} temporadas (${episodesCount} episodios)`;
+                updated = true;
+              }
+
+              if (updated) {
+                // Trigger signal updates by re-setting the level reference
+                const mode = this.currentGameMode();
+                if (mode === 'random' || mode === 'daily') {
+                  this.activeCustomLevel.set({ ...level });
+                } else {
+                  this.allLevels.update(lvls => {
+                    return lvls.map(l => l.levelId === level.levelId ? { ...level } : l);
+                  });
+                }
+              }
+            }
           }
         }
       }

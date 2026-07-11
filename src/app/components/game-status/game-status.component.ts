@@ -16,12 +16,28 @@ export class GameStatusComponent {
   @Input() hints!: MovieHints;
   @Input() resolvedFrameUrl = '';
   @Input() guessHistory: string[] = [];
+  @Input() isAnime = false;
 
   private readonly gameStateService = inject(GameStateService);
   readonly translationService = inject(TranslationService);
 
   t(key: string): string {
     return this.translationService.t(key);
+  }
+
+  getTruncatedPlot(plot: string): string {
+    if (!plot) return '';
+    let firstParagraph = plot.split('\n')[0].trim();
+    if (firstParagraph.length > 180) {
+      const sub = firstParagraph.slice(0, 180);
+      const lastPeriod = sub.lastIndexOf('.');
+      if (lastPeriod > 100) {
+        firstParagraph = firstParagraph.slice(0, lastPeriod + 1);
+      } else {
+        firstParagraph = sub.trim() + '...';
+      }
+    }
+    return firstParagraph;
   }
 
   openLightbox() {

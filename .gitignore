@@ -45,3 +45,6 @@ Thumbs.db
 
 # Secrets
 firebase-key.json
+
+#Archivos MD
+.ArchivosMD/*

@@ -39,21 +39,21 @@
   <!-- Right: Global Actions (Progreso Button) -->
   <div class="flex items-center justify-end w-1/4 gap-2 sm:gap-3">
     <!-- Language Selector Dropdown -->
-    <div class="relative">
+    <div class="relative flex items-center">
       <button 
         type="button" 
         (click)="toggleLangDropdown()"
-        class="w-10 h-10 flex items-center justify-center bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800/80 rounded-full transition-colors duration-200 cursor-pointer select-none shadow">
+        class="flex items-center justify-center transition duration-200 hover:opacity-85 cursor-pointer select-none">
         <img 
           [src]="currentLang() === 'es' ? 'https://flagcdn.com/w40/es.png' : 'https://flagcdn.com/w40/gb.png'" 
           [alt]="currentLang()" 
-          class="w-5 h-3.5 object-cover rounded shadow-2xs" />
+          class="w-6 h-4 object-cover rounded shadow-2xs" />
       </button>
 
       <!-- Language selector dropdown menu -->
       <div 
         *ngIf="showLangDropdown" 
-        class="absolute right-0 mt-2 w-32 bg-slate-950/90 border border-slate-800/80 rounded-xl p-1 shadow-2xl backdrop-blur-xl z-50">
+        class="absolute right-0 top-full mt-2 w-32 bg-slate-950/90 border border-slate-800/80 rounded-xl p-1 shadow-2xl backdrop-blur-xl z-50">
         <button 
           type="button" 
           (click)="selectLanguage('es')"
@@ -78,10 +78,10 @@
       <button 
         type="button"
         (click)="toggleStatsDropdown()"
-        class="flex items-center gap-0 sm:gap-2 pl-1.5 pr-1.5 sm:pr-3 py-1.5 sm:py-1 text-xs rounded-full border border-slate-800/80 bg-slate-950/40 hover:border-brand-purple/40 transition cursor-pointer select-none">
+        class="flex items-center gap-0 sm:gap-2 transition cursor-pointer select-none border-0 bg-transparent p-0 sm:border sm:border-slate-800/80 sm:bg-slate-950/40 sm:hover:border-brand-purple/40 sm:pl-1.5 sm:pr-3 sm:py-1 sm:rounded-full">
         
         <!-- Small User Avatar -->
-        <div class="w-7 h-7 rounded-full flex items-center justify-center overflow-hidden border border-slate-700/80"
+        <div class="w-9 h-9 sm:w-7 sm:h-7 rounded-full flex items-center justify-center overflow-hidden border border-slate-700/80"
              [ngClass]="authService.getAvatar(authService.currentUser()!.avatarId).gradient">
           <img [src]="authService.getAvatar(authService.currentUser()!.avatarId).avatarUrl" 
                [alt]="authService.currentUser()?.username" 

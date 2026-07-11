@@ -3,6 +3,9 @@ export interface MovieHints {
   director: string;
   frameUrl: string; // Image URL of a movie frame (e.g. from Wikimedia or generated image path)
   plot: string;     // Short summary/plot clue of the movie
+  genre?: string;
+  releaseYear?: string;
+  seasons?: string;
 }
 
 export interface OSTLevel {
