@@ -1,0 +1,205 @@
+<main class="flex-grow max-w-5xl w-full mx-auto p-6 flex flex-col justify-start relative z-10 pt-4">
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+    
+    <!-- Left Column: Profile Card (Avatar + Logout + Reset Progress) -->
+    <div class="bg-slate-950/80 border border-slate-850 rounded-3xl p-6 shadow-xl relative overflow-hidden text-center">
+      <!-- Top Accent bar -->
+      <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-purple to-brand-cyan"></div>
+      
+      <!-- Avatar Wrapper with Edit overlay -->
+      <div class="relative w-28 h-28 mx-auto mt-4 group">
+        <div 
+          (click)="toggleAvatarModal()"
+          class="w-full h-full rounded-full flex items-center justify-center overflow-hidden border-2 border-slate-700 bg-slate-900/60 shadow-lg cursor-pointer transition duration-300 group-hover:border-brand-cyan/60"
+          [ngClass]="authService.getAvatar(authService.currentUser()!.avatarId).gradient">
+          <img 
+            [src]="authService.getAvatar(authService.currentUser()!.avatarId).avatarUrl" 
+            [alt]="authService.currentUser()?.username" 
+            class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+        </div>
+        
+        <!-- Pencil Edit Icon -->
+        <button 
+          type="button"
+          (click)="toggleAvatarModal()"
+          title="Cambiar avatar"
+          class="absolute bottom-1 right-1 w-8 h-8 bg-brand-cyan text-slate-950 rounded-full flex items-center justify-center border-2 border-slate-950 shadow-md hover:scale-110 active:scale-95 transition duration-200 cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-1">
+        <h3 class="text-lg font-black text-white tracking-wide">
+          {{ authService.currentUser()?.username }}
+        </h3>
+        <p class="text-3xs text-brand-cyan uppercase tracking-widest font-extrabold pb-2">
+          {{ authService.currentUser()?.email || 'Invitado local' }}
+        </p>
+      </div>
+
+      <!-- Actions Zone inside the Left Card -->
+      <div class="mt-6 pt-6 border-t border-slate-900 flex flex-col gap-3">
+        <button 
+          type="button"
+          (click)="triggerLogoutConfirm()"
+          class="w-full py-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-400 hover:text-red-500 text-3xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer select-none active:scale-[0.98]">
+          Cerrar Sesión
+        </button>
+        <button 
+          type="button"
+          (click)="triggerResetConfirm()"
+          class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 text-3xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer select-none active:scale-[0.98]">
+          {{ t('NAVBAR.RESET_PROGRESS') }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Right/Middle Column: Unified Stats Card (Stats + Collapse Attempts) -->
+    <div class="md:col-span-2">
+      <div class="bg-slate-950/80 border border-slate-850 rounded-3xl p-6 shadow-xl space-y-6">
+        
+        <!-- Section title -->
+        <h3 class="text-xs font-black uppercase text-brand-purple tracking-widest border-b border-slate-900 pb-2">
+          {{ t('GAME.STATS') }}
+        </h3>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
+          <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/60 shadow-inner">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ t('NAVBAR.MOVIES') }}</span>
+            <span class="text-lg font-black text-white">
+              {{ stats().moviesWon }}/{{ stats().moviesPlayed }}
+            </span>
+          </div>
+
+          <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/60 shadow-inner">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ t('NAVBAR.SERIES') }}</span>
+            <span class="text-lg font-black text-white">
+              {{ stats().seriesWon }}/{{ stats().seriesPlayed }}
+            </span>
+          </div>
+
+          <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/60 shadow-inner col-span-2 sm:col-span-1">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ t('NAVBAR.ANIME') }}</span>
+            <span class="text-lg font-black text-white">
+              {{ stats().animeWon || 0 }}/{{ stats().animePlayed || 0 }}
+            </span>
+          </div>
+
+          <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/60 shadow-inner col-span-2 sm:col-span-1">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ t('NAVBAR.CLASSIC') }} {{ t('NAVBAR.STREAK') }}</span>
+            <span class="text-sm font-black text-brand-cyan">
+              {{ stats().streak }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ stats().maxStreak }})
+            </span>
+          </div>
+
+          <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/60 shadow-inner col-span-2 sm:col-span-1 flex flex-col justify-center">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ t('NAVBAR.SURVIVAL') }} {{ t('NAVBAR.ANIME') }}</span>
+            <span class="text-sm font-black text-orange-400">
+              {{ animeStreak() }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ maxAnimeStreak() }})
+            </span>
+          </div>
+
+          <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/60 shadow-inner col-span-2 sm:col-span-1 flex flex-col justify-center">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ t('NAVBAR.SURVIVAL') }} {{ t('NAVBAR.RANDOM') }}</span>
+            <span class="text-sm font-black text-yellow-500">
+              {{ randomStreak() }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ maxRandomStreak() }})
+            </span>
+          </div>
+        </div>
+
+        <!-- Attempts distribution (Accordion / Collapse) -->
+        <div class="border-t border-slate-900 pt-4">
+          <button 
+            type="button"
+            (click)="toggleAttempts()"
+            class="w-full flex items-center justify-between py-2 text-left cursor-pointer group select-none">
+            <span class="text-2xs font-black uppercase text-brand-purple tracking-widest group-hover:text-white transition duration-200">
+              {{ t('NAVBAR.ATTEMPTS_CLASSIC') }}
+            </span>
+            <span class="text-slate-500 group-hover:text-white transition duration-200 transform" [ngClass]="{'rotate-180': showAttempts}">
+              ▼
+            </span>
+          </button>
+          
+          <div *ngIf="showAttempts" class="space-y-3 mt-4 animate-fade-in">
+            <div *ngFor="let count of stats().distribution; let idx = index" class="flex items-center gap-4 text-xs">
+              <span class="w-4 text-slate-400 font-mono font-black text-right">{{ idx + 1 }}</span>
+              <div class="flex-grow h-3.5 bg-slate-900 rounded-full overflow-hidden border border-slate-850">
+                <div 
+                  class="h-full bg-gradient-to-r from-brand-purple to-brand-cyan transition-all duration-500 rounded-full" 
+                  [style.width.%]="stats().moviesWon + stats().seriesWon + (stats().animeWon || 0) > 0 ? (count / (stats().moviesWon + stats().seriesWon + (stats().animeWon || 0))) * 100 : 0">
+                </div>
+              </div>
+              <span class="w-8 text-left font-black text-slate-300 font-mono">{{ count }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Avatar Selection Pop-up Modal -->
+<div *ngIf="showAvatarModal" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" (click)="toggleAvatarModal()">
+  <div 
+    class="bg-slate-950 border border-slate-850 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 relative overflow-hidden animate-scale-up"
+    (click)="$event.stopPropagation()">
+    <!-- Accent Top Line -->
+    <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-cyan to-brand-purple"></div>
+
+    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+      <span class="text-2xs font-black uppercase text-brand-cyan tracking-widest">Elegir nuevo avatar</span>
+      <button (click)="toggleAvatarModal()" class="text-slate-500 hover:text-white text-xs cursor-pointer select-none">✕</button>
+    </div>
+
+    <div class="grid grid-cols-4 gap-2.5">
+      <button
+        *ngFor="let av of authService.avatars"
+        type="button"
+        (click)="selectAvatar(av.id)"
+        [ngClass]="[
+          av.gradient,
+          authService.currentUser()?.avatarId === av.id ? 'border-2 border-brand-cyan scale-105 shadow-brand-cyan/20' : 'border border-slate-800 hover:border-slate-600 hover:scale-102'
+        ]"
+        class="aspect-square rounded-full flex items-center justify-center overflow-hidden transition duration-200 cursor-pointer shadow-md">
+        <img [src]="av.avatarUrl" [alt]="av.name" class="w-full h-full object-cover" />
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div *ngIf="showLogoutConfirm" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" (click)="cancelLogout()">
+  <div 
+    class="bg-slate-950 border border-slate-850 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4 relative overflow-hidden animate-scale-up"
+    (click)="$event.stopPropagation()">
+    <!-- Top Accent Line -->
+    <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-red-500 to-brand-purple"></div>
+    
+    <h3 class="text-xs font-black text-white uppercase tracking-widest pt-2">
+      {{ t('NAVBAR.CONFIRM_LOGOUT_TITLE') }}
+    </h3>
+    <p class="text-2xs text-slate-400 leading-relaxed">
+      {{ t('NAVBAR.CONFIRM_LOGOUT_DESC') }}
+    </p>
+    
+    <div class="grid grid-cols-2 gap-2 pt-2">
+      <button 
+        type="button" 
+        (click)="cancelLogout()"
+        class="py-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-extrabold text-3xs uppercase tracking-wider rounded-xl transition duration-200 cursor-pointer">
+        {{ t('NAVBAR.CONFIRM_LOGOUT_CANCEL') }}
+      </button>
+      <button 
+        type="button" 
+        (click)="confirmLogout()"
+        class="py-2.5 bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 hover:border-red-500/40 text-red-400 font-extrabold text-3xs uppercase tracking-wider rounded-xl transition duration-200 cursor-pointer">
+        {{ t('NAVBAR.CONFIRM_LOGOUT_CONFIRM') }}
+      </button>
+    </div>
+  </div>
+</div>

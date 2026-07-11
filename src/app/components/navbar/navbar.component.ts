@@ -20,22 +20,6 @@ export class NavbarComponent {
   readonly authService = inject(AuthService);
   private readonly elementRef = inject(ElementRef);
 
-  showLogoutConfirm = false;
-
-  triggerLogoutConfirm() {
-    this.showLogoutConfirm = true;
-    this.showStatsDropdown = false;
-  }
-
-  confirmLogout() {
-    this.authService.logout();
-    this.showLogoutConfirm = false;
-  }
-
-  cancelLogout() {
-    this.showLogoutConfirm = false;
-  }
-
   readonly currentLang = this.translationService.currentLang;
   t(key: string): string {
     return this.translationService.t(key);
@@ -54,7 +38,6 @@ export class NavbarComponent {
   readonly randomStreak = this.gameStateService.randomModeService.randomStreak;
   readonly maxRandomStreak = this.gameStateService.randomModeService.maxRandomStreak;
 
-  showStatsDropdown = false;
   showLangDropdown = false;
 
   toggleLangDropdown(event?: Event) {
@@ -62,9 +45,6 @@ export class NavbarComponent {
       event.stopPropagation();
     }
     this.showLangDropdown = !this.showLangDropdown;
-    if (this.showLangDropdown) {
-      this.showStatsDropdown = false;
-    }
   }
 
   selectLanguage(lang: 'es' | 'en') {
@@ -72,39 +52,37 @@ export class NavbarComponent {
     this.showLangDropdown = false;
   }
 
-  backToGrid() {
-    this.gameStateService.backToGrid();
+  goBack() {
+    const view = this.currentView();
+    if (view === 'game') {
+      const mode = this.gameStateService.currentGameMode();
+      if (mode === 'movies' || mode === 'series' || mode === 'anime') {
+        this.gameStateService.currentView.set('grid');
+      } else {
+        this.gameStateService.currentView.set('modes');
+      }
+    } else if (view === 'grid' || view === 'profile') {
+      this.gameStateService.currentView.set('modes');
+    }
   }
 
   goToModes() {
     this.gameStateService.goToModes();
-    this.showStatsDropdown = false;
   }
 
-  toggleStatsDropdown(event?: Event) {
-    if (event) {
-      event.stopPropagation();
-    }
-    this.showStatsDropdown = !this.showStatsDropdown;
-    if (this.showStatsDropdown) {
-      this.showLangDropdown = false;
-    }
-  }
-
-  closeStatsDropdown() {
-    this.showStatsDropdown = false;
+  goToProfile() {
+    this.gameStateService.currentView.set('profile');
+    this.showLangDropdown = false;
   }
 
   triggerResetConfirm() {
     this.gameStateService.showResetConfirm.set(true);
-    this.showStatsDropdown = false;
   }
 
   @HostListener('document:click', ['$event'])
   onClickOutside(event: Event) {
     if (!this.elementRef.nativeElement.contains(event.target)) {
       this.showLangDropdown = false;
-      this.showStatsDropdown = false;
     }
   }
 }

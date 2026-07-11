@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GameStateService } from '../../core/game-state.service';
 import { TranslationService } from '../../core/i18n/translation.service';
+import { Capacitor } from '@capacitor/core';
 
 @Component({
   selector: 'app-home',
@@ -16,7 +17,7 @@ export class HomeComponent {
   isWeb = true;
 
   constructor() {
-    this.isWeb = !(window as any).Capacitor?.isNative;
+    this.isWeb = !Capacitor.isNativePlatform();
   }
 
   t(key: string): string {

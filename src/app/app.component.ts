@@ -13,6 +13,7 @@ import { SurvivalStatsComponent } from './components/survival-stats/survival-sta
 import { TranslationService } from './core/i18n/translation.service';
 import { AuthService } from './core/auth.service';
 import { LoginComponent } from './components/login/login.component';
+import { ProfileComponent } from './components/profile/profile.component';
 
 @Component({
   selector: 'app-root',
@@ -28,7 +29,8 @@ import { LoginComponent } from './components/login/login.component';
     ResetConfirmModalComponent,
     DailyStatusComponent,
     SurvivalStatsComponent,
-    LoginComponent
+    LoginComponent,
+    ProfileComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
@@ -37,6 +39,30 @@ export class App {
   readonly gameStateService = inject(GameStateService);
   readonly translationService = inject(TranslationService);
   readonly authService = inject(AuthService);
+
+  constructor() {
+    document.addEventListener('backbutton', (e) => {
+      const view = this.gameStateService.currentView();
+      if (view !== 'modes') {
+        e.preventDefault();
+        this.handleHardwareBack();
+      }
+    }, false);
+  }
+
+  handleHardwareBack() {
+    const view = this.gameStateService.currentView();
+    if (view === 'game') {
+      const mode = this.gameStateService.currentGameMode();
+      if (mode === 'movies' || mode === 'series' || mode === 'anime') {
+        this.gameStateService.currentView.set('grid');
+      } else {
+        this.gameStateService.currentView.set('modes');
+      }
+    } else if (view === 'grid' || view === 'profile') {
+      this.gameStateService.currentView.set('modes');
+    }
+  }
 
   t(key: string): string {
     return this.translationService.t(key);

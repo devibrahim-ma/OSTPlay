@@ -77,7 +77,7 @@ export class GameStateService {
   activeCustomLevel = signal<OSTLevel | null>(null);
 
   // Active navigation view
-  currentView = signal<'modes' | 'grid' | 'game'>('modes');
+  currentView = signal<'modes' | 'grid' | 'game' | 'profile'>('modes');
 
   // Per-level active attempt states
   currentAttempt = signal<number>(1); // 1 to 5

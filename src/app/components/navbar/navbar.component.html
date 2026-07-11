@@ -1,24 +1,23 @@
 <header class="bg-obsidian-950/40 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between min-h-[85px]">
   <!-- Left: Navigation buttons -->
   <div class="flex items-center w-1/4 gap-2">
-    <!-- Back to levels grid / modes -->
+    <!-- Back Arrow (Icon only) -->
     <button 
-      *ngIf="currentView() === 'game'"
+      *ngIf="currentView() !== 'modes'"
       type="button"
-      (click)="backToGrid()"
-      class="text-xs font-bold px-3 py-2 sm:px-4 bg-slate-900/60 backdrop-blur-md text-slate-300 border border-slate-800/80 rounded-full hover:border-brand-purple/40 hover:text-white transition duration-200 flex items-center gap-1.5 cursor-pointer">
+      (click)="goBack()"
+      class="text-xs font-bold p-2 bg-slate-900/60 backdrop-blur-md text-slate-300 border border-slate-800/80 rounded-full hover:border-brand-purple/40 hover:text-white transition duration-200 flex items-center justify-center cursor-pointer w-9 h-9 shrink-0">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
       </svg>
-      <span class="hidden sm:inline">{{ t('NAVBAR.GAME_MODES') }}</span>
     </button>
 
-    <!-- Back to game modes selection -->
+    <!-- Home / Modes Button -->
     <button 
-      *ngIf="currentView() === 'grid'"
+      *ngIf="currentView() !== 'modes'"
       type="button"
       (click)="goToModes()"
-      class="text-xs font-bold px-3 py-2 sm:px-4 bg-slate-900/60 backdrop-blur-md text-slate-300 border border-slate-800/80 rounded-full hover:border-brand-purple/40 hover:text-white transition duration-200 flex items-center gap-1.5 cursor-pointer">
+      class="text-xs font-bold px-3 py-2 bg-slate-900/60 backdrop-blur-md text-slate-300 border border-slate-800/80 rounded-full hover:border-brand-purple/40 hover:text-white transition duration-200 flex items-center gap-1.5 cursor-pointer h-9 shrink-0">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
@@ -77,7 +76,7 @@
     <div class="relative" *ngIf="authService.currentUser() !== null">
       <button 
         type="button"
-        (click)="toggleStatsDropdown($event)"
+        (click)="goToProfile()"
         class="flex items-center gap-0 sm:gap-2 transition cursor-pointer select-none border-0 bg-transparent p-0 sm:border sm:border-slate-800/80 sm:bg-slate-950/40 sm:hover:border-brand-purple/40 sm:pl-1.5 sm:pr-3 sm:py-1 sm:rounded-full">
         
         <!-- Small User Avatar -->
@@ -90,140 +89,6 @@
 
         <span class="hidden sm:inline font-bold text-slate-300">{{ authService.currentUser()?.username }}</span>
       </button>
-
-      <!-- Dropdown stats card -->
-      <div 
-        *ngIf="showStatsDropdown" 
-        class="absolute right-0 mt-3 w-80 bg-slate-950 border border-slate-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-xl z-50 space-y-4 max-h-[85vh] overflow-y-auto">
-        
-        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-          <span class="text-xs font-black uppercase text-brand-purple tracking-widest">{{ t('GAME.STATS') }}</span>
-          <button (click)="closeStatsDropdown()" class="text-slate-500 hover:text-white text-xs">✕</button>
-        </div>
-
-        <!-- User Profile Card in Dropdown -->
-        <div class="flex items-center gap-3 p-3 bg-slate-900/40 border border-slate-800/50 rounded-2xl">
-          <div class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden border border-slate-700 bg-slate-900/60"
-               [ngClass]="authService.getAvatar(authService.currentUser()!.avatarId).gradient">
-            <img [src]="authService.getAvatar(authService.currentUser()!.avatarId).avatarUrl" 
-                 [alt]="authService.currentUser()?.username" 
-                 class="w-full h-full object-cover" />
-          </div>
-          <div class="text-left">
-            <h4 class="text-xs font-black text-white leading-tight">
-              {{ authService.currentUser()?.username }}
-            </h4>
-            <p class="text-[9px] text-slate-400 mt-0.5 leading-none">
-              Perfil Cinéfilo
-            </p>
-            <p class="text-[8px] text-brand-cyan uppercase tracking-wider font-extrabold mt-1">
-              {{ authService.currentUser()?.email }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Stats list / grid -->
-        <div class="grid grid-cols-2 gap-3 text-center">
-          <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50">
-            <span class="block text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.MOVIES') }}</span>
-            <span class="text-xs font-black text-white">
-              {{ stats().moviesWon }}/{{ stats().moviesPlayed }}
-            </span>
-          </div>
-          <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50">
-            <span class="block text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.SERIES') }}</span>
-            <span class="text-xs font-black text-white">
-              {{ stats().seriesWon }}/{{ stats().seriesPlayed }}
-            </span>
-          </div>
-          <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50">
-            <span class="block text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.ANIME') }}</span>
-            <span class="text-xs font-black text-white">
-              {{ stats().animeWon || 0 }}/{{ stats().animePlayed || 0 }}
-            </span>
-          </div>
-          <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50">
-            <span class="block text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.CLASSIC') }} {{ t('NAVBAR.STREAK') }}</span>
-            <span class="text-xs font-black text-brand-cyan">
-              {{ stats().streak }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ stats().maxStreak }})
-            </span>
-          </div>
-          <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50 col-span-2 flex justify-between items-center px-4 py-1.5">
-            <span class="text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.SURVIVAL') }} {{ t('NAVBAR.ANIME') }}</span>
-            <span class="text-xs font-black text-orange-400">
-              {{ animeStreak() }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ maxAnimeStreak() }})
-            </span>
-          </div>
-          <div class="bg-slate-900/60 p-2 rounded-xl border border-slate-800/50 col-span-2 flex justify-between items-center px-4 py-1.5">
-            <span class="text-[8px] font-bold text-slate-400 uppercase">{{ t('NAVBAR.SURVIVAL') }} {{ t('NAVBAR.RANDOM') }}</span>
-            <span class="text-xs font-black text-yellow-500">
-              {{ randomStreak() }} ({{ t('NAVBAR.MAX_STREAK') }}: {{ maxRandomStreak() }})
-            </span>
-          </div>
-        </div>
-
-        <!-- Attempt distribution -->
-        <div class="space-y-1.5 pt-2">
-          <span class="block text-[9px] font-black text-slate-400 uppercase tracking-wider">{{ t('NAVBAR.ATTEMPTS_CLASSIC') }}</span>
-          <div class="space-y-1">
-            <div *ngFor="let count of stats().distribution; let idx = index" class="flex items-center gap-2 text-3xs">
-              <span class="w-3 text-slate-500 font-mono">{{ idx + 1 }}</span>
-              <div class="flex-grow h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-                <div 
-                  class="h-full bg-brand-cyan" 
-                  [style.width.%]="stats().moviesWon + stats().seriesWon + (stats().animeWon || 0) > 0 ? (count / (stats().moviesWon + stats().seriesWon + (stats().animeWon || 0))) * 100 : 0">
-                </div>
-              </div>
-              <span class="w-4 text-right font-bold text-slate-300 font-mono">{{ count }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-900">
-          <button 
-            type="button"
-            (click)="triggerResetConfirm()"
-            class="w-full py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 text-red-400 text-3xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer">
-            {{ t('NAVBAR.RESET_PROGRESS') }}
-          </button>
-          <button 
-            type="button"
-            (click)="triggerLogoutConfirm()"
-            class="w-full py-2 bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-500 text-3xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer">
-            Cerrar Sesión
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </header>
-
-<!-- Logout Confirmation Modal -->
-<div *ngIf="showLogoutConfirm" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-  <div class="bg-slate-950 border border-slate-850 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4 relative overflow-hidden">
-    <!-- Top Accent Line -->
-    <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-red-500 to-brand-purple"></div>
-    
-    <div class="text-3xl">🚪</div>
-    <h3 class="text-xs font-black text-white uppercase tracking-widest">
-      {{ t('NAVBAR.CONFIRM_LOGOUT_TITLE') }}
-    </h3>
-    <p class="text-2xs text-slate-400 leading-relaxed">
-      {{ t('NAVBAR.CONFIRM_LOGOUT_DESC') }}
-    </p>
-    
-    <div class="grid grid-cols-2 gap-2 pt-2">
-      <button 
-        type="button" 
-        (click)="cancelLogout()"
-        class="py-2.5 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 font-extrabold text-3xs uppercase tracking-wider rounded-xl transition duration-200 cursor-pointer">
-        {{ t('NAVBAR.CONFIRM_LOGOUT_CANCEL') }}
-      </button>
-      <button 
-        type="button" 
-        (click)="confirmLogout()"
-        class="py-2.5 bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 hover:border-red-500/40 text-red-400 font-extrabold text-3xs uppercase tracking-wider rounded-xl transition duration-200 cursor-pointer">
-        {{ t('NAVBAR.CONFIRM_LOGOUT_CONFIRM') }}
-      </button>
-    </div>
-  </div>
-</div>

@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 export interface UserProfile {
   uid: string;
@@ -151,6 +151,34 @@ export class AuthService {
 
   getAvatar(avatarId: string): AvatarOption {
     return this.avatars.find(a => a.id === avatarId) || this.avatars[0];
+  }
+
+  async updateAvatar(avatarId: string): Promise<void> {
+    const user = this.currentUser();
+    if (!user) return;
+
+    if (user.uid === 'guest') {
+      this.currentUser.set({
+        ...user,
+        avatarId
+      });
+      return;
+    }
+
+    try {
+      const cleanUsernameLower = user.username.toLowerCase();
+      const userDocRef = doc(db, 'users', cleanUsernameLower);
+      await updateDoc(userDocRef, {
+        avatarId: avatarId
+      });
+
+      this.currentUser.set({
+        ...user,
+        avatarId
+      });
+    } catch (e) {
+      console.error('Error updating avatar:', e);
+    }
   }
 
   private async getUserProfileByUid(uid: string): Promise<UserProfile | null> {
