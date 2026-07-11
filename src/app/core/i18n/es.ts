@@ -31,7 +31,8 @@ export const ES_TRANSLATIONS = {
     PLAY_SERIES: 'Jugar Series',
     PLAY_ANIME: 'Jugar Anime',
     PLAY_DAILY: 'Jugar Reto',
-    PLAY_RANDOM: 'Jugar Aleatorio'
+    PLAY_RANDOM: 'Jugar Aleatorio',
+    PLAY_ONLY: 'Jugar'
   },
   GAME: {
     QUICK_SELECT: 'Selección Rápida',

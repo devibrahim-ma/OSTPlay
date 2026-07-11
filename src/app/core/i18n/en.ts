@@ -31,7 +31,8 @@ export const EN_TRANSLATIONS = {
     PLAY_SERIES: 'Play Series',
     PLAY_ANIME: 'Play Anime',
     PLAY_DAILY: 'Play Daily',
-    PLAY_RANDOM: 'Play Random'
+    PLAY_RANDOM: 'Play Random',
+    PLAY_ONLY: 'Play'
   },
   GAME: {
     QUICK_SELECT: 'Quick Select',
