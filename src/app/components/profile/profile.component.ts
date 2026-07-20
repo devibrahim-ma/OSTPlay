@@ -66,4 +66,8 @@ export class ProfileComponent {
   backToHome() {
     this.gameStateService.currentView.set('modes');
   }
+
+  goToAdminPanel() {
+    this.gameStateService.currentView.set('admin');
+  }
 }

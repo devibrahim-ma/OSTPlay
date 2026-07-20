@@ -14,6 +14,7 @@ export interface UserProfile {
   username: string;
   email: string;
   avatarId: string;
+  role?: 'user' | 'admin';
 }
 
 export interface AvatarOption {
@@ -118,7 +119,8 @@ export class AuthService {
             uid: firebaseUser.uid,
             username: firebaseUser.displayName || 'Invitado',
             email: firebaseUser.email || '',
-            avatarId: 'avatar_1'
+            avatarId: 'avatar_1',
+            role: 'user'
           });
         }
       } else {
@@ -129,7 +131,8 @@ export class AuthService {
             uid: 'guest',
             username: 'Invitado',
             email: '',
-            avatarId: 'avatar_1'
+            avatarId: 'avatar_1',
+            role: 'user'
           });
         } else {
           this.currentUser.set(null);
@@ -200,7 +203,8 @@ export class AuthService {
           uid: docData['uid'],
           username: docData['username'],
           email: docData['email'],
-          avatarId: docData['avatarId'] || 'avatar_1'
+          avatarId: docData['avatarId'] || 'avatar_1',
+          role: docData['role'] || 'user'
         };
       }
     } catch (e) {
@@ -231,6 +235,7 @@ export class AuthService {
       username: cleanUsername,
       email: cleanEmail,
       avatarId,
+      role: 'user',
       createdAt: new Date().toISOString()
     });
 
@@ -238,7 +243,8 @@ export class AuthService {
       uid,
       username: cleanUsername,
       email: cleanEmail,
-      avatarId
+      avatarId,
+      role: 'user'
     });
   }
 

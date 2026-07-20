@@ -30,6 +30,9 @@
       <!-- 1b. PROFILE VIEW -->
       <app-profile *ngIf="currentView() === 'profile'"></app-profile>
 
+      <!-- 1c. ADMIN VERIFICATION PANEL -->
+      <app-admin-panel *ngIf="currentView() === 'admin' && authService.currentUser()?.role === 'admin'"></app-admin-panel>
+
       <!-- 2. GAMEPLAY VIEW: ACTIVE LEVEL GAME -->
       <main *ngIf="currentView() === 'game' && currentLevel() !== null" class="flex-grow max-w-none w-full mx-auto px-10 py-6 grid grid-cols-1 md:grid-cols-12 gap-8 relative z-10 items-start">
         

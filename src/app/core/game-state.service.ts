@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { db } from './firebase.config';
-import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { OSTLevel, LevelStatus } from '../types/ost-level.model';
 import { ANIME_OST_LEVELS } from '../data/animeLevels';
 import { ClassicModeService } from './modes/classic-mode.service';
@@ -77,7 +77,7 @@ export class GameStateService {
   activeCustomLevel = signal<OSTLevel | null>(null);
 
   // Active navigation view
-  currentView = signal<'modes' | 'grid' | 'game' | 'profile'>('modes');
+  currentView = signal<'modes' | 'grid' | 'game' | 'profile' | 'admin'>('modes');
 
   // Per-level active attempt states
   currentAttempt = signal<number>(1); // 1 to 5
@@ -273,7 +273,7 @@ export class GameStateService {
       querySnapshot.forEach((doc) => {
         const data = doc.data();
         fetchedLevels.push({
-          levelId: data['levelId'] || doc.id,
+          levelId: String(data['levelId'] || doc.id),
           category: data['category'] || 'movies',
           isAnime: data['isAnime'] || false,
           title: data['title'] !== undefined && data['title'] !== null ? String(data['title']) : '',
@@ -365,10 +365,20 @@ export class GameStateService {
 
       // Restaurar estado guardado si ya ha sido jugado o está en curso
       const savedState = this.getLevelGameplayState(level.levelId);
+      const status = this.levelStatuses()[level.levelId];
+      
       if (savedState) {
         this.currentAttempt.set(savedState.attempt);
         this.guessHistory.set(savedState.guessHistory);
         this.gameState.set(savedState.state);
+      } else if (status === 'won') {
+        this.currentAttempt.set(5);
+        this.guessHistory.set([level.title]);
+        this.gameState.set('won');
+      } else if (status === 'lost') {
+        this.currentAttempt.set(5);
+        this.guessHistory.set([]);
+        this.gameState.set('lost');
       } else {
         this.currentAttempt.set(1);
         this.guessHistory.set([]);
@@ -728,5 +738,55 @@ export class GameStateService {
       } catch (e) { }
     }
     return null;
+  }
+
+  async updateLevelDetails(levelId: string, details: { audioStartOffset: number, youtubeId?: string, audioUrl?: string }) {
+    try {
+      const docRef = doc(db, 'levels', levelId);
+      await updateDoc(docRef, details);
+      
+      // Update local state
+      this.allLevels.update(levels =>
+        levels.map(l => l.levelId === levelId ? { ...l, ...details } : l)
+      );
+      return true;
+    } catch (error) {
+      console.error('Error updating level details in Firestore:', error);
+      throw error;
+    }
+  }
+
+  async updateLevelsOrder(orderedLevelIds: string[]) {
+    try {
+      const batch = writeBatch(db);
+      
+      // Calculate new popularity values: 10000, 9990, 9980, ...
+      const updates: Record<string, number> = {};
+      orderedLevelIds.forEach((levelId, index) => {
+        const strId = String(levelId);
+        const newPopularity = 10000 - index * 10;
+        const docRef = doc(db, 'levels', strId);
+        batch.update(docRef, { popularity: newPopularity });
+        updates[strId] = newPopularity;
+      });
+
+      await batch.commit();
+
+      // Update local state signal
+      this.allLevels.update(levels =>
+        levels.map(l => {
+          const levelId = l.levelId;
+          if (updates[levelId] !== undefined) {
+            return { ...l, popularity: updates[levelId] };
+          }
+          return l;
+        }).sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Error updating levels order in Firestore:', error);
+      throw error;
+    }
   }
 }

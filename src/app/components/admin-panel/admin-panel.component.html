@@ -1,0 +1,458 @@
+<main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-start relative z-10 pt-4">
+  <!-- Top header bar -->
+  <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-900/60">
+    <div class="flex items-center gap-3">
+      <button 
+        type="button"
+        (click)="goBack()"
+        class="p-2 bg-slate-900/60 border border-slate-800 text-slate-300 rounded-full hover:border-brand-purple/40 hover:text-white transition duration-200 cursor-pointer shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-brand-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </button>
+      <div>
+        <h2 class="text-base sm:text-lg font-black text-white tracking-wide uppercase">
+          Verificador de OST
+        </h2>
+        <p class="text-4xs sm:text-3xs text-brand-cyan tracking-widest uppercase font-extrabold">
+          Panel de Control Administrativo
+        </p>
+      </div>
+    </div>
+    
+    <!-- Total levels statistics badge -->
+    <div class="bg-obsidian-900/50 border border-slate-800/80 px-4 py-1.5 rounded-full text-3xs font-black uppercase text-slate-400">
+      Total Niveles: <span class="text-brand-purple">{{ gameStateService.allLevels().length }}</span>
+    </div>
+  </div>
+
+  <!-- Main grid layout -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    
+    <!-- Left Column: Filter and Levels list (4 cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-4 max-h-[78vh] overflow-hidden bg-slate-950/80 border border-slate-850 rounded-3xl p-4 shadow-xl">
+      <!-- Search input -->
+      <div class="relative">
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+          <svg class="h-4.5 w-4.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </span>
+        <input 
+          type="text" 
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Buscar película, serie o anime..."
+          class="w-full pl-10 pr-4 py-2.5 bg-obsidian-950/60 border border-slate-850 hover:border-slate-800 focus:border-brand-purple/50 focus:ring-1 focus:ring-brand-purple/30 rounded-2xl text-xs font-semibold text-white placeholder-slate-500 outline-none transition duration-200" />
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="flex flex-wrap gap-1.5 pb-1 border-b border-slate-900">
+        <button 
+          type="button" 
+          (click)="selectedCategory.set('all')"
+          [class.active-pill]="selectedCategory() === 'all'"
+          class="px-3 py-1.5 rounded-full text-4xs font-bold uppercase tracking-wider bg-slate-900 text-slate-400 border border-slate-850 hover:text-white transition duration-200 cursor-pointer">
+          Todos
+        </button>
+        <button 
+          type="button" 
+          (click)="selectedCategory.set('movies')"
+          [class.active-pill]="selectedCategory() === 'movies'"
+          class="px-3 py-1.5 rounded-full text-4xs font-bold uppercase tracking-wider bg-slate-900 text-slate-400 border border-slate-850 hover:text-white transition duration-200 cursor-pointer">
+          🎬 Películas
+        </button>
+        <button 
+          type="button" 
+          (click)="selectedCategory.set('series')"
+          [class.active-pill]="selectedCategory() === 'series'"
+          class="px-3 py-1.5 rounded-full text-4xs font-bold uppercase tracking-wider bg-slate-900 text-slate-400 border border-slate-850 hover:text-white transition duration-200 cursor-pointer">
+          📺 Series
+        </button>
+        <button 
+          type="button" 
+          (click)="selectedCategory.set('anime')"
+          [class.active-pill]="selectedCategory() === 'anime'"
+          class="px-3 py-1.5 rounded-full text-4xs font-bold uppercase tracking-wider bg-slate-900 text-slate-400 border border-slate-850 hover:text-white transition duration-200 cursor-pointer">
+          🌸 Anime
+        </button>
+      </div>
+
+      <!-- Info alert if search is active or in 'all' telling them how to reorder -->
+      <div *ngIf="selectedCategory() !== 'all' && searchQuery().trim()" class="bg-brand-purple/5 border border-brand-purple/10 px-3.5 py-2.5 rounded-2xl text-[10px] text-brand-cyan/80 leading-normal font-semibold">
+        💡 Limpia el buscador para poder cambiar de posición los niveles por arrastre.
+      </div>
+      <div *ngIf="selectedCategory() === 'all'" class="bg-brand-purple/5 border border-brand-purple/10 px-3.5 py-2.5 rounded-2xl text-[10px] text-brand-cyan/80 leading-normal font-semibold">
+        💡 Filtra por Películas, Series o Anime para poder reordenar los niveles.
+      </div>
+
+      <!-- Scrollable list of items -->
+      <div class="flex-grow overflow-y-auto pr-1 space-y-2 max-h-[46vh] lg:max-h-[50vh]">
+        <div
+          *ngFor="let level of filteredLevels(); let idx = index"
+          [attr.draggable]="(selectedCategory() !== 'all' && !searchQuery()) ? 'true' : 'false'"
+          (dragstart)="onDragStart(idx, $event)"
+          (dragover)="onDragOver($event)"
+          (drop)="onDrop(idx, $event)"
+          (dragend)="onDragEnd()"
+          [ngClass]="{
+            'border-slate-850 bg-slate-900/10 text-slate-300 hover:bg-slate-900/30 hover:border-slate-800': selectedLevel()?.levelId !== level.levelId,
+            'border-brand-purple bg-brand-purple/10 text-brand-cyan shadow-md shadow-brand-purple/5': selectedLevel()?.levelId === level.levelId,
+            'opacity-40 border-dashed border-slate-700': draggedIndex === idx
+          }"
+          class="w-full text-left p-3 border rounded-2xl flex items-center justify-between transition duration-200 select-none group relative">
+          
+          <!-- Grab handle icon (only shown when reorderable) -->
+          <div *ngIf="selectedCategory() !== 'all' && !searchQuery()" class="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 p-1 hidden group-hover:block select-none z-10 shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+            </svg>
+          </div>
+
+          <div 
+            (click)="selectLevel(level)"
+            class="flex flex-col gap-1 pr-4 max-w-[70%] cursor-pointer group-hover:pl-4 transition-all duration-200 flex-grow">
+            <span class="text-xs font-extrabold truncate">{{ level.title }}</span>
+            <span class="text-[10px] text-slate-500 uppercase font-black tracking-wider flex items-center gap-1.5 flex-wrap">
+              {{ getDisplayLevelText(level, idx) }}
+              <span class="text-slate-700">•</span>
+              <span class="text-slate-600 truncate font-mono text-[9px]">{{ level.levelId }}</span>
+            </span>
+          </div>
+          
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Reorder action group (shown only if reorderable) -->
+            <div *ngIf="selectedCategory() !== 'all' && !searchQuery()" class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <!-- Up / Down column -->
+              <div class="flex flex-col gap-0.5">
+                <button 
+                  type="button"
+                  [disabled]="idx === 0"
+                  (click)="$event.stopPropagation(); moveLevel(idx, 'up')"
+                  class="p-0.5 hover:text-brand-cyan hover:bg-slate-900/80 rounded-md disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed text-slate-500"
+                  title="Subir 1 posición">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-3.5 h-3.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                  </svg>
+                </button>
+                <button 
+                  type="button"
+                  [disabled]="idx === localOrderedLevels().length - 1"
+                  (click)="$event.stopPropagation(); moveLevel(idx, 'down')"
+                  class="p-0.5 hover:text-brand-cyan hover:bg-slate-900/80 rounded-md disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed text-slate-500"
+                  title="Bajar 1 posición">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-3.5 h-3.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Numerical Input jump button -->
+              <button 
+                type="button"
+                (click)="$event.stopPropagation(); promptMoveToPosition(idx)"
+                class="p-1 hover:text-brand-cyan hover:bg-slate-900/80 rounded-md cursor-pointer text-slate-500 flex items-center justify-center"
+                title="Mover a posición exacta...">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Offset status badge -->
+            <span 
+              *ngIf="level.audioStartOffset !== undefined" 
+              class="px-2 py-0.5 text-[9px] font-mono font-black bg-emerald-500/15 border border-emerald-500/20 text-emerald-400 rounded-lg">
+              {{ level.audioStartOffset }}s
+            </span>
+            <span 
+              *ngIf="level.audioStartOffset === undefined" 
+              class="px-2 py-0.5 text-[9px] font-mono font-black bg-amber-500/15 border border-amber-500/20 text-amber-500 rounded-lg">
+              Auto
+            </span>
+          </div>
+        </div>
+        
+        <!-- Empty Results View -->
+        <div *ngIf="filteredLevels().length === 0" class="py-12 text-center text-slate-500 text-xs font-semibold">
+          No se encontraron niveles con los criterios indicados.
+        </div>
+      </div>
+
+      <!-- Save Reordered List Button Section -->
+      <div *ngIf="selectedCategory() !== 'all' && isDirty()" class="pt-2 border-t border-slate-900/80 flex flex-col gap-2 animate-fade-in shrink-0">
+        <div *ngIf="reorderSuccess" class="bg-emerald-500/10 border border-emerald-500/25 p-2.5 rounded-xl text-3xs font-extrabold text-emerald-400 uppercase tracking-widest text-center animate-fade-in flex items-center justify-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+            <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+          </svg>
+          ¡Orden guardado en Firestore!
+        </div>
+        
+        <button 
+          type="button"
+          (click)="saveReorderedList()"
+          [disabled]="isReorderSaving"
+          class="w-full py-2 bg-gradient-to-r from-brand-purple/20 to-brand-cyan/20 hover:from-brand-purple/35 hover:to-brand-cyan/35 border border-brand-purple/30 hover:border-brand-cyan/40 text-brand-cyan text-4xs font-black uppercase tracking-widest rounded-xl transition duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 select-none active:scale-[0.99] shadow-md shadow-brand-purple/5">
+          <span *ngIf="isReorderSaving" class="w-3 h-3 rounded-full border-2 border-brand-cyan border-t-transparent animate-spin shrink-0"></span>
+          <svg *ngIf="!isReorderSaving" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5 shrink-0">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ isReorderSaving ? 'Guardando orden...' : 'Guardar Orden de Niveles' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Column: Verification Player and Editor (7 cols) -->
+    <div class="lg:col-span-7 bg-slate-950/80 border border-slate-850 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+      <!-- Accent Top line -->
+      <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-brand-cyan to-brand-purple"></div>
+
+      <!-- No level selected placeholder -->
+      <div *ngIf="!selectedLevel()" class="py-24 text-center flex flex-col items-center justify-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-slate-900 border border-slate-850 flex items-center justify-center text-slate-500 animate-pulse">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+          </svg>
+        </div>
+        <p class="text-xs font-bold text-slate-400">Ningún nivel seleccionado</p>
+        <p class="text-3xs text-slate-500 max-w-xs leading-relaxed uppercase tracking-wider font-extrabold">
+          Selecciona un nivel de la lista de la izquierda para empezar a auditar y calibrar el audio.
+        </p>
+      </div>
+
+      <!-- Active verification workspace -->
+      <div *ngIf="selectedLevel()" class="space-y-6">
+        <!-- Level headers -->
+        <div class="pb-4 border-b border-slate-900 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h3 class="text-base font-black text-white leading-tight">
+              {{ selectedLevel()?.title }}
+            </h3>
+            <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mt-1 flex items-center gap-2">
+              <span class="text-brand-cyan">{{ selectedLevel()?.isAnime ? 'Anime' : (selectedLevel()?.category === 'movies' ? 'Película' : 'Serie') }}</span>
+              <span>•</span>
+              <span>ID: <code class="text-slate-400 font-mono text-[9.5px]">{{ selectedLevel()?.levelId }}</code></span>
+            </p>
+          </div>
+
+          <!-- YouTube Quick Link -->
+          <a 
+            [href]="selectedLevel()?.audioUrl" 
+            target="_blank" 
+            class="text-[9px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 flex items-center gap-1.5 cursor-pointer self-start sm:self-center bg-red-950/20 border border-red-500/25 px-3 py-1 rounded-full shrink-0">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5">
+              <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.107C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.388.511a3.002 3.002 0 0 0-2.11 2.107C0 8.053 0 12 0 12s0 3.947.502 5.837a3.003 3.003 0 0 0 2.11 2.107c1.883.511 9.388.511 9.388.511s7.505 0 9.388-.511a3.002 3.002 0 0 0 2.11-2.107c.502-1.89.502-5.837.502-5.837s0-3.947-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            Ver en YouTube
+          </a>
+        </div>
+
+        <!-- Visual wave display -->
+        <div class="relative h-24 bg-slate-950 border border-slate-900 rounded-2xl flex items-center justify-center overflow-hidden shadow-inner">
+          <canvas #visualizerCanvas class="w-full h-full absolute inset-0 z-0"></canvas>
+          <div class="relative z-10 flex flex-col items-center">
+            <span class="text-xl font-mono font-black text-white drop-shadow-md">
+              {{ formatTime(currentTime) }}
+            </span>
+            <span class="text-4xs text-slate-500 uppercase tracking-widest font-black mt-1">
+              Duración total: {{ formatTime(totalDuration) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Timeline seekbar (range slider) -->
+        <div class="space-y-1.5">
+          <input 
+            type="range"
+            [min]="0"
+            [max]="totalDuration || 100"
+            [value]="currentTime"
+            (input)="seekTo($any($event.target).value)"
+            class="w-full h-1.5 bg-slate-900 accent-brand-cyan rounded-lg appearance-none cursor-pointer border border-slate-850" />
+          <div class="flex justify-between text-4xs font-mono font-bold text-slate-500 px-0.5">
+            <span>0:00</span>
+            <span class="text-brand-purple">Posición actual: {{ formatTime(currentTime) }}</span>
+            <span>{{ formatTime(totalDuration) }}</span>
+          </div>
+        </div>
+
+        <!-- Audio controls row -->
+        <div class="flex flex-wrap items-center justify-between gap-4 py-2 border-y border-slate-900/60">
+          <!-- Play / Pause / Mute -->
+          <div class="flex items-center gap-2">
+            <!-- Play/Pause -->
+            <button 
+              type="button"
+              (click)="togglePlay()"
+              class="w-10 h-10 rounded-full flex items-center justify-center transition duration-200 cursor-pointer shadow-md select-none border"
+              [ngClass]="{
+                'bg-brand-cyan text-slate-950 border-brand-cyan/60 hover:scale-105 hover:bg-brand-cyan/90': !isPlaying,
+                'bg-slate-900 text-brand-purple border-slate-800 hover:border-slate-600': isPlaying
+              }">
+              <svg *ngIf="!isPlaying" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 translate-x-[1px]">
+                <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+              </svg>
+              <svg *ngIf="isPlaying" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                <path d="M5.75 3a.75.75 0 01.75.75v12.5a.75.75 0 01-1.5 0v-12.5A.75.75 0 015.75 3zM14.25 3a.75.75 0 01.75.75v12.5a.75.75 0 01-1.5 0v-12.5A.75.75 0 0114.25 3z" />
+              </svg>
+            </button>
+
+            <!-- Mute / Unmute -->
+            <button 
+              type="button"
+              (click)="toggleMute()"
+              class="p-2 border border-slate-800 rounded-xl bg-slate-900 text-slate-400 hover:text-white transition duration-200 cursor-pointer">
+              <svg *ngIf="!isMuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-brand-cyan">
+                <path d="M10 3.75a.75.75 0 00-1.264-.546L5.203 6.5H3.5a1 1 0 00-1 1v5a1 1 0 001 1h1.703l3.533 3.296A.75.75 0 0010 16.25V3.75zM13 10a3 3 0 01-1.66 2.685.75.75 0 11-.68-1.34A1.5 1.5 0 0011.5 10a1.5 1.5 0 00-.84-1.345.75.75 0 11.68-1.34A3 3 0 0113 10zM15.82 6.18a.75.75 0 111.06 1.06 5.5 5.5 0 000 7.78.75.75 0 11-1.06 1.06 7 7 0 010-9.9z" />
+              </svg>
+              <svg *ngIf="isMuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-red-500 animate-pulse">
+                <path d="M9.383 3.076A.75.75 0 0110 3.75v6.159L8.03 7.979 9.383 3.076zM15.82 6.18a.75.75 0 011.06 0 7 7 0 010 9.9.75.75 0 11-1.06-1.06 5.5 5.5 0 000-7.78.75.75 0 010-1.06zM13.63 8.37a3 3 0 010 3.26.75.75 0 11-1.3-.75 1.5 1.5 0 000-1.76.75.75 0 111.3-.75zM2.22 2.22a.75.75 0 011.06 0l14.5 14.5a.75.75 0 11-1.06 1.06L12.44 13.5H12.3l-2.3 2.146a.75.75 0 01-1.23-.56V11.23L4.97 7.43H3.5a1 1 0 00-1 1v5a1 1 0 001 1h1.703l1.1 1.025a.75.75 0 11-1.01 1.11L5.203 13.5H3.5A2.5 2.5 0 011 11V6a2.5 2.5 0 012.5-2.5h.352L1.16 2.34a.75.75 0 011.06-1.06l14.5 14.5-.06-.06z" />
+              </svg>
+            </button>
+
+            <!-- Volume slider -->
+            <input 
+              type="range" 
+              [min]="0" 
+              [max]="1" 
+              [step]="0.05"
+              [value]="volume"
+              (input)="onVolumeChange($any($event.target).value)"
+              class="w-16 h-1 bg-slate-900 rounded-lg appearance-none cursor-pointer outline-none shrink-0" />
+          </div>
+
+          <!-- Quick skips -->
+          <div class="flex items-center gap-1">
+            <button type="button" (click)="skip(-5)" class="skip-btn">-5s</button>
+            <button type="button" (click)="skip(-1)" class="skip-btn">-1s</button>
+            <button type="button" (click)="skip(1)" class="skip-btn">+1s</button>
+            <button type="button" (click)="skip(5)" class="skip-btn">+5s</button>
+          </div>
+        </div>
+
+        <!-- YouTube Video Editor Box -->
+        <div class="bg-slate-900/35 border border-slate-900 rounded-2xl p-4 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-950 pb-2">
+            <span class="text-3xs font-black uppercase text-brand-cyan tracking-wider">Video de YouTube</span>
+            <span class="text-4xs text-slate-500 font-bold">Cambia el ID o URL si el video actual no es adecuado</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+            <!-- YouTube link input field (spans 2 columns) -->
+            <div class="sm:col-span-2 space-y-1.5">
+              <label class="block text-4xs font-black text-slate-400 uppercase tracking-wide">
+                ID o URL completa del Video
+              </label>
+              <input 
+                type="text"
+                [(ngModel)]="youtubeInput"
+                placeholder="Ej. pcgarKICN94 o https://www.youtube.com/watch?v=..."
+                class="w-full px-3 py-2 bg-obsidian-950 border border-slate-850 hover:border-slate-800 focus:border-brand-purple/50 rounded-xl text-xs font-semibold text-white outline-none" />
+            </div>
+
+            <!-- Preview/Load button -->
+            <button 
+              type="button"
+              (click)="previewNewVideo()"
+              class="w-full py-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-brand-cyan text-4xs font-black uppercase tracking-widest rounded-xl transition duration-200 cursor-pointer select-none active:scale-[0.98] h-[36px] flex items-center justify-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+              Cargar Video
+            </button>
+          </div>
+        </div>
+
+        <!-- Offset Calibration Controls -->
+        <div class="bg-slate-900/35 border border-slate-900 rounded-2xl p-4 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-950 pb-2">
+            <span class="text-3xs font-black uppercase text-brand-cyan tracking-wider">Ajuste de Inicio de la Canción</span>
+            <span class="text-4xs text-slate-500 font-bold">Guarda los segundos para recortar intros silentes</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+            <!-- Numerical Offset edit field -->
+            <div class="space-y-1.5">
+              <label class="block text-4xs font-black text-slate-400 uppercase tracking-wide">
+                Segundo de Inicio (audioStartOffset)
+              </label>
+              <div class="relative flex items-center">
+                <input 
+                  type="number"
+                  [(ngModel)]="offsetInput"
+                  min="0"
+                  class="w-full px-3 py-2 bg-obsidian-950 border border-slate-850 hover:border-slate-800 focus:border-brand-purple/50 rounded-xl text-xs font-mono font-bold text-white outline-none" />
+                <span class="absolute right-3.5 text-4xs font-bold text-slate-500 uppercase">segundos</span>
+              </div>
+            </div>
+
+            <!-- Set current time as offset button -->
+            <button 
+              type="button"
+              (click)="setOffsetFromCurrentTime()"
+              class="w-full py-2 bg-slate-850 hover:bg-slate-800 border border-slate-800 text-brand-cyan text-4xs font-black uppercase tracking-widest rounded-xl transition duration-200 cursor-pointer select-none active:scale-[0.98] h-[36px] flex items-center justify-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+              </svg>
+              Copiar segundo actual
+            </button>
+          </div>
+          
+          <p class="text-4xs text-slate-500 leading-normal uppercase tracking-wider font-extrabold pt-1">
+            ⚠️ Al copiar el segundo actual, usarás el tiempo exacto donde se detuvo el reproductor arriba. Escucha la canción, deténla cuando empiece la música ideal y presiona "Copiar".
+          </p>
+        </div>
+
+        <!-- Firestore Save panel -->
+        <div class="pt-2 flex flex-col gap-3">
+          <!-- Save status feedback messages -->
+          <div *ngIf="saveSuccess" class="bg-emerald-500/10 border border-emerald-500/25 p-3 rounded-2xl text-3xs font-extrabold text-emerald-400 uppercase tracking-widest text-center animate-fade-in flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+            </svg>
+            ¡Guardado con éxito en Firestore!
+          </div>
+
+          <div *ngIf="errorMessage" class="bg-red-500/10 border border-red-500/25 p-3 rounded-2xl text-3xs font-extrabold text-red-400 uppercase tracking-widest text-center animate-fade-in">
+            {{ errorMessage }}
+          </div>
+
+          <!-- FireStore Submit Button -->
+          <button 
+            type="button"
+            (click)="saveOffset()"
+            [disabled]="isSaving"
+            class="w-full py-3 bg-gradient-to-r from-brand-cyan to-brand-purple text-slate-950 text-xs font-black uppercase tracking-widest rounded-2xl transition duration-200 cursor-pointer shadow-lg hover:shadow-brand-purple/20 hover:scale-101 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 select-none">
+            
+            <!-- Loading spinner -->
+            <span *ngIf="isSaving" class="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin shrink-0"></span>
+            
+            <svg *ngIf="!isSaving" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 shrink-0">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            {{ isSaving ? 'Guardando en la Nube...' : 'Guardar en Firestore' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Hidden player targets container -->
+<div id="admin-yt-player-container" class="hidden"></div>
+
+<!-- Success Toast Popup Overlay -->
+<div 
+  *ngIf="showToastPopup" 
+  class="fixed bottom-6 right-6 z-[100] bg-slate-900 border border-emerald-500/60 text-emerald-400 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 animate-fade-in max-w-sm backdrop-blur-md">
+  <div class="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-emerald-400">
+      <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+    </svg>
+  </div>
+  <div class="text-left">
+    <h4 class="text-xs font-black uppercase tracking-widest text-white">¡Guardado con éxito!</h4>
+    <p class="text-[9px] text-slate-400 uppercase font-black tracking-wider mt-0.5 leading-tight">Los cambios se han actualizado en Firestore.</p>
+  </div>
+</div>

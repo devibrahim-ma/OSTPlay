@@ -14,6 +14,7 @@ import { TranslationService } from './core/i18n/translation.service';
 import { AuthService } from './core/auth.service';
 import { LoginComponent } from './components/login/login.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { AdminPanelComponent } from './components/admin-panel/admin-panel.component';
 
 @Component({
   selector: 'app-root',
@@ -30,7 +31,8 @@ import { ProfileComponent } from './components/profile/profile.component';
     DailyStatusComponent,
     SurvivalStatsComponent,
     LoginComponent,
-    ProfileComponent
+    ProfileComponent,
+    AdminPanelComponent
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
