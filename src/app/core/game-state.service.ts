@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { db } from './firebase.config';
-import { collection, getDocs, doc, getDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { OSTLevel, LevelStatus } from '../types/ost-level.model';
 import { ANIME_OST_LEVELS } from '../data/animeLevels';
 import { ClassicModeService } from './modes/classic-mode.service';
@@ -132,11 +132,59 @@ export class GameStateService {
     return Math.round((wonCount / currentList.length) * 100);
   });
 
+    // Helper to read local statuses safely
+  private readLocalStatuses(): Record<string, LevelStatus> {
+    const saved = localStorage.getItem('ostplay_statuses');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) { }
+    }
+    return {};
+  }
+
+  // Helper to read local gameplay states safely
+  private readLocalGameplayStates(): Record<string, { attempt: number, guessHistory: string[], state: 'playing' | 'won' | 'lost' }> {
+    const saved = localStorage.getItem('ostplay_gameplay_states');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) { }
+    }
+    return {};
+  }
+
+  // Auto-reconcile level statuses from cloud, local storage, and gameplay states
+  private reconcileStatuses(
+    levels: OSTLevel[],
+    cloudStatuses: Record<string, LevelStatus> = {},
+    localStatuses: Record<string, LevelStatus> = {},
+    gameplayStates: Record<string, { attempt: number, guessHistory: string[], state: 'playing' | 'won' | 'lost' }> = {}
+  ): Record<string, LevelStatus> {
+    const result: Record<string, LevelStatus> = {};
+    levels.forEach(lvl => {
+      const id = lvl.levelId;
+      const cloudSt = cloudStatuses[id];
+      const localSt = localStatuses[id];
+      const gameSt = gameplayStates[id]?.state;
+
+      // Priority: 'won' > 'lost' > 'neutral'
+      if (cloudSt === 'won' || localSt === 'won' || gameSt === 'won') {
+        result[id] = 'won';
+      } else if (cloudSt === 'lost' || localSt === 'lost' || gameSt === 'lost') {
+        result[id] = 'lost';
+      } else {
+        result[id] = 'neutral';
+      }
+    });
+    return result;
+  }
+
   constructor() {
     this.loadLevelsFromFirestore();
     this.loadLocalStats();
 
-    // Effect to load stats/statuses from Firestore or local storage on Login
+    // Effect to load stats/statuses/gameplayStates from Firestore or local storage on Login
     effect(async () => {
       const user = this.authService.currentUser();
       const levels = this.allLevels();
@@ -151,22 +199,45 @@ export class GameStateService {
           const userDocRef = doc(db, 'users', user.username.toLowerCase());
           try {
             const userDoc = await getDoc(userDocRef);
+            const localStatuses = this.readLocalStatuses();
+            const localGameplay = this.readLocalGameplayStates();
+
+            let cloudStatuses: Record<string, LevelStatus> = {};
+            let cloudGameplay: Record<string, any> = {};
+
             if (userDoc.exists()) {
               const data = userDoc.data();
               if (data['stats']) {
                 this.stats.set(data['stats']);
               }
               if (data['statuses']) {
-                const cloudStatuses = data['statuses'];
-                const initial: Record<string, LevelStatus> = {};
-                levels.forEach(lvl => {
-                  initial[lvl.levelId] = cloudStatuses[lvl.levelId] || 'neutral';
-                });
-                this.levelStatuses.set(initial);
+                cloudStatuses = data['statuses'];
+              }
+              if (data['gameplayStates']) {
+                cloudGameplay = data['gameplayStates'];
               }
             }
+
+            // Merge local and cloud gameplay states so no local history is lost
+            const mergedGameplay = { ...cloudGameplay, ...localGameplay };
+            const mergedStatuses = this.reconcileStatuses(levels, cloudStatuses, localStatuses, mergedGameplay);
+
+            this.levelStatuses.set(mergedStatuses);
+
+            // Persist back merged progress
+            localStorage.setItem('ostplay_statuses', JSON.stringify(mergedStatuses));
+            localStorage.setItem('ostplay_gameplay_states', JSON.stringify(mergedGameplay));
+
+            // Sync to Firestore immediately so user document has full merged state
+            await setDoc(userDocRef, {
+              stats: this.stats(),
+              statuses: mergedStatuses,
+              gameplayStates: mergedGameplay
+            }, { merge: true });
+
           } catch (e) {
             console.error('Error loading stats from Firestore:', e);
+            this.initializeStatuses(levels);
           } finally {
             this.isInitializedFromCloud = true;
           }
@@ -176,11 +247,12 @@ export class GameStateService {
       }
     }, { allowSignalWrites: true });
 
-    // Effect to save stats/statuses to Firestore or local storage on changes
+    // Effect to save stats/statuses/gameplayStates to Firestore or local storage on changes
     effect(async () => {
       const user = this.authService.currentUser();
       const stats = this.stats();
       const statuses = this.levelStatuses();
+      const gameplayStates = this.readLocalGameplayStates();
 
       if (user) {
         // Local storage is updated for everyone (guests and authenticated users)
@@ -193,7 +265,8 @@ export class GameStateService {
           try {
             await updateDoc(userDocRef, {
               stats,
-              statuses
+              statuses,
+              gameplayStates
             });
           } catch (e) {
             console.error('Error syncing progress to Firestore:', e);
@@ -316,21 +389,11 @@ export class GameStateService {
   }
 
   private initializeStatuses(fetchedLevels: OSTLevel[]) {
-    const saved = localStorage.getItem('ostplay_statuses');
-    let localStatuses: Record<string, LevelStatus> = {};
-    if (saved) {
-      try {
-        localStatuses = JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parseando localStorage:', e);
-      }
-    }
-
-    const initial: Record<string, LevelStatus> = {};
-    fetchedLevels.forEach(lvl => {
-      initial[lvl.levelId] = localStatuses[lvl.levelId] || 'neutral';
-    });
-    this.levelStatuses.set(initial);
+    const localStatuses = this.readLocalStatuses();
+    const gameplayStates = this.readLocalGameplayStates();
+    const reconciled = this.reconcileStatuses(fetchedLevels, {}, localStatuses, gameplayStates);
+    this.levelStatuses.set(reconciled);
+    localStorage.setItem('ostplay_statuses', JSON.stringify(reconciled));
   }
 
   /**
